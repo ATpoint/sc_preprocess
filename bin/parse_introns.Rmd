@@ -1,0 +1,124 @@
+---
+title: "`r paste(params$title, params$basename)`"
+author: "`r params$author`"
+date: "`r format(Sys.time(), '%d-%b-%Y')`"
+output:
+  rmdformats::readthedown:
+    keep_md: false
+params:
+  author:         ""
+  title:          "scRNAseq: Parse exonic and intronic transcripts"
+  genome:         ""
+  gtf:            ""
+  gene_name:      "gene_name"
+  gene_id:        "gene_id"
+  gene_type:      "gene_type"
+  readlength:     91
+  chrM:           "chrM"
+  prefix:         ""
+---
+
+## Introduction
+
+Use genome, transcritome and reference GTF files from GENCODE and create a combined spliced/unspliced reference.
+This follows the [Alevin Velocity tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/).
+  
+## Packages & Setup
+
+```{r setup}
+
+suppressPackageStartupMessages(library(Biostrings))
+suppressPackageStartupMessages(library(BSgenome))
+suppressPackageStartupMessages(library(eisaR))
+suppressPackageStartupMessages(library(GenomicFeatures))
+suppressPackageStartupMessages(library(RhpcBLASctl))
+suppressPackageStartupMessages(library(rtracklayer))
+
+#/ disable implicit BLAS multithreading:
+RhpcBLASctl::blas_set_num_threads(1)
+RhpcBLASctl::omp_set_num_threads(1)
+
+stop_quietly <- function() {
+  opt <- options(show.error.messages = FALSE)
+  on.exit(options(opt))
+  stop()
+}
+
+```
+
+## Load reference data
+
+```{r main}
+
+#/ read GTF:
+gtf.gr <- import(params$gtf)
+
+#/ Verify gene_name, gene_id and gene_type from params are part of that GTF:
+checkExistCol <- function(x,  # gtf
+                          y){ # colname
+  if(!y %in% colnames(mcols(x))) {
+    message(
+      "\n",
+      "------------------------------------------------------------------------------------","\n",
+      "[Error] ", y, " is not a column name in the GTF!","\n",
+      "------------------------------------------------------------------------------------","\n")
+    stop_quietly()
+  }
+}
+checkExistCol(gtf.gr, params$gene_name)
+checkExistCol(gtf.gr, params$gene_type)
+checkExistCol(gtf.gr, params$gene_id)
+
+#/ extract introns from GTF based on the given read length:
+grl <- eisaR::getFeatureRanges(
+  gtf = params$gtf, featureType = c("spliced", "intron"), intronType = "separate", 
+  flankLength = as.numeric(params$readlength), joinOverlappingIntrons = FALSE,verbose = FALSE)
+
+#/ load the genome and make sure name is not a whitespace-delimited mess:
+genome <- Biostrings::readDNAStringSet(params$genome)
+names(genome) <- sapply(strsplit(names(genome), " "), .subset, 1)
+
+#/ get transcripts from genome
+seqs <- GenomicFeatures::extractTranscriptSeqs(x = genome, transcripts = grl)
+
+#/ write expanded transcriptome (exon+intron)
+Biostrings::writeXStringSet(
+  seqs, filepath = paste0(params$prefix, "annotation.expanded.fa.gz"), compress=TRUE)
+
+#/ write expanded gtf 
+gz <- gzfile(paste0(params$prefix, "annotation.expanded.gtf.gz"), "w")
+eisaR::exportToGtf(grl, filepath = gz); close(gz)
+
+#/ write exon/intron mappings
+gz <- gzfile(paste0(params$prefix, "annotation.expanded.features.tsv.gz"), "w")
+write.table(metadata(grl)$corrgene, file = gz, row.names = FALSE, 
+            col.names = TRUE, quote = FALSE, sep = "\t"); close(gz)
+
+#/ write transcriptome to gene mapping file
+df <- eisaR::getTx2Gene(grl, filepath = paste0(params$prefix, "annotation.expanded.tx2gene.tsv"))
+
+#/ Parse mitochondrial and rRNA genes:
+write.table(x = sort(unique(gtf.gr[gtf.gr$gene_type == "rRNA",]$gene_id)),
+            file = paste0(params$prefix, "annotation.rRNA.txt"), sep = "\n", col.names = FALSE, 
+            row.names = FALSE, quote = FALSE)
+
+write.table(x = sort(unique(gtf.gr[seqnames(gtf.gr)==params$chrM,]$gene_id)),
+            file = paste0(params$prefix, "annotation.mtRNA.txt"), 
+            sep = "\n", col.names = FALSE, 
+            row.names = FALSE, quote = FALSE)
+
+#/ A data.frame with gene_id, gene_name and gene_type:
+dfgr <- data.frame(gtf.gr[gtf.gr$type=="gene"])
+write.table(x=dfgr[,c(params$gene_id, params$gene_name, params$gene_type)],
+            file = paste0(params$prefix, "annotation.gene2type.txt"), sep = "\t", 
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+
+```
+
+## sessionInfo
+
+```{r sessioninfo}
+
+sessionInfo()
+
+```

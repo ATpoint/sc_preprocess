@@ -1,0 +1,116 @@
+---
+title: "`r paste(params$title, params$basename)`"
+author: "`r params$author`"
+date: "`r format(Sys.time(), '%d-%b-%Y')`"
+output:
+  rmdformats::readthedown:
+    keep_md: false
+params:
+  author:             ""
+  title:              "scRNAseq: Alevin2Mtx"
+  basename:           ""
+  alevin_quant:       "" 
+  expanded_features:  ""
+  gene2type:          ""
+---
+
+## Introduction
+  
+Read the Alevin quantifications (`quants_mat.gz` files) into R using [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html).  
+Then split the quantifications into spliced (exon) and unspliced (intron) count tables,
+and then saves these tables as gzipped MatrixMarket (mtx) files to disk together with the col- and rowdata as tsv files.
+  
+## Packages & Setup
+  
+```{r}
+
+suppressPackageStartupMessages(library(fishpond))
+suppressPackageStartupMessages(library(Matrix))
+suppressPackageStartupMessages(library(rtracklayer))
+suppressPackageStartupMessages(library(tximeta))
+suppressPackageStartupMessages(library(SummarizedExperiment))
+
+stop_quietly <- function() {
+  opt <- options(show.error.messages = FALSE)
+  on.exit(options(opt))
+  stop()
+}
+
+```
+
+## Load data
+
+We load the quantifications with `tximeta` (Love et al.).
+  
+```{r main}
+
+#/ Read the table mapping intronic to exonic features:
+cg <- read.delim(params$expanded_features, header=TRUE, as.is=TRUE)
+colnames(cg)[colnames(cg) == "intron"] <- "unspliced"
+
+#/ Read quantifications with tximeta:
+se <- tximeta::tximeta(
+  coldata = data.frame(names=params$basename, 
+                       files=paste0(params$alevin_quant,"/alevin/quants_mat.gz"),
+                       stringsAsFactors=TRUE),
+                       type="alevin", skipMeta=TRUE, dropInfReps=TRUE)
+
+#/ split into spliced- and unspliced:
+se <- tximeta::splitSE(se, cg, assayName = "counts")
+assayNames(se)[1] <- "counts"
+
+#/ colnames are currently the per-cell barcode, put that into the colData:
+se$cell_barcode <- colnames(se)
+colnames(se) <- paste0(params$basename, "_", colnames(se))
+
+#/ add the gene_id, gene_name and gene_type data.frame to the rowData:  
+gene2type <- read.delim(params$gene2type, header=TRUE, as.is=TRUE)
+
+m <- merge(x=data.frame(gene_id=rownames(se)), 
+           y=data.frame(gene2type),
+           by.x="gene_id", by.y="gene_id", sort=FALSE, all.x=TRUE, all.y=FALSE)
+  
+rowData(se)  <- DataFrame(m)
+
+```
+
+## Save as MatrixMarket file
+
+Save the spliced- and unspliced counts in the generic mtx format and compress with gzip.
+These can then later be provided e.g. as supplementary material in a GEP submission so the 
+user could reproduce the analysis from these files rather than starting from scratch with the fastq files.
+  
+```{r}
+
+#/ Save to disk as mtx and compress:
+spl    <- paste(params$basename, "spliced.mtx", sep="_")
+unspl <-  paste(params$basename, "unspliced.mtx", sep="_")
+
+##/ Use the Matrix package for the conversion of the sparse matrix to mtx:
+invisible(writeMM(obj=assay(se, "counts"), file=spl))
+invisible(writeMM(obj=assay(se, "unspliced"), file=unspl))
+
+#/ run gzip:
+system(command = paste("gzip", spl))
+system(command = paste("gzip", unspl))
+
+#/ Save col- and rowdata and compress:
+file.colnames <- gzfile(paste(params$basename, "colnames.tsv.gz", sep="_"), "w")
+write.table(x=data.frame(Barcodes=se$cell_barcode, Colnames=colnames(se)),
+            file=file.colnames, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
+close(file.colnames)
+
+file.rowdata <- gzfile(paste(params$basename, "rowdata.tsv.gz", sep="_"), "w")
+write.table(x=data.frame(rowData(se)), file=file.rowdata,
+            col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
+close(file.rowdata)
+
+```
+
+## sessionInfo
+
+```{r}
+
+sessionInfo()
+
+```
