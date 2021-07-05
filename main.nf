@@ -19,7 +19,9 @@ nextflow.enable.dsl=2
 
 ch_fastq    = Channel
                 .fromFilePairs(params.fastq, checkIfExists: true)
-                .ifEmpty("No fastq files found")   
+                .ifEmpty("No fastq files found")
+
+params.run_mtx = false // decide whether to read the alevin quants and save as mtx.gz       
 
 // Define the final workflow:
 workflow SCRNASEQ {
@@ -70,13 +72,16 @@ workflow SCRNASEQ {
                 ParseExonIntronTx.out.mtgenes)      // list of mito genes
 
     //-------------------------------------------------------------------------------------------------------------------------------//
-    // Load into R, split into spliced/unspliced, save as mtx.gz:
-    include {   WriteMtx }               from './modules/write_mtx'         addParams(  outdir:     params.mtx_outdir,
-                                                                                        author:     params.author)
-                                                                                        
-    WriteMtx(   AlevinQuant.out.quants.map { file -> tuple(file.baseName, file) },
-                ParseExonIntronTx.out.features,     
-                ParseExonIntronTx.out.gene2type)   
+    if(params.run_mtx){
+    
+        // Load into R, split into spliced/unspliced, save as mtx.gz:
+        include {   WriteMtx }               from './modules/write_mtx'         addParams(  outdir:     params.mtx_outdir,
+                                                                                            author:     params.author)
+                                                                                            
+        WriteMtx(   AlevinQuant.out.quants.map { file -> tuple(file.baseName, file) },
+                    ParseExonIntronTx.out.features,     
+                    ParseExonIntronTx.out.gene2type)   
+    }
    
 }                
 
