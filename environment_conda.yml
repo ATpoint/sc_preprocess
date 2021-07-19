@@ -5,7 +5,6 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1
-  - _openmp_mutex=4.5
   - _r-mutex=1.0.1
   - bioconductor-annotationdbi=1.50.0
   - bioconductor-annotationfilter=1.12.0
@@ -67,18 +66,13 @@ dependencies:
   - libedit=3.1.20191231
   - libev=4.33
   - libffi=3.2.1
-  - libgcc-ng=9.3.0
-  - libgfortran-ng=7.5.0
-  - libgfortran4=7.5.0
   - libglib=2.66.2
-  - libgomp=9.3.0
   - libiconv=1.16
   - liblapack=3.8.0
   - libnghttp2=1.41.0
   - libopenblas=0.3.10
   - libpng=1.6.37
   - libssh2=1.9.0
-  - libstdcxx-ng=9.3.0
   - libtiff=4.1.0
   - libuuid=2.32.1
   - libwebp-base=1.1.0
