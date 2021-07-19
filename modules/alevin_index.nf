@@ -1,9 +1,10 @@
 // Alevin/Salmon indexing module:
 process AlevinIndex {
 
-    label params.label
+    cpus    params.threads
+    memory  params.mem
 
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
+    publishDir params.outdir, mode: params.pubmode
 
     input:
     path(genome) // genome fasta channel

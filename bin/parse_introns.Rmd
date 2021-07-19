@@ -72,7 +72,7 @@ checkExistCol(gtf.gr, params$gene_id)
 #/ extract introns from GTF based on the given read length:
 grl <- eisaR::getFeatureRanges(
   gtf = params$gtf, featureType = c("spliced", "intron"), intronType = "separate", 
-  flankLength = as.numeric(params$readlength), joinOverlappingIntrons = FALSE,verbose = FALSE)
+  flankLength = as.numeric(params$readlength)-1, joinOverlappingIntrons = FALSE,verbose = FALSE)
 
 #/ load the genome and make sure name is not a whitespace-delimited mess:
 genome <- Biostrings::readDNAStringSet(params$genome)

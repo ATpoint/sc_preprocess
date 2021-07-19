@@ -2,12 +2,12 @@
 
 process WriteMtx {
 
+    cpus    params.threads
+    memory  params.mem
+
+    publishDir params.outdir, mode: params.pubmode
+
     tag "Write mtx.gz: $basename"
-
-    cpus 1
-    memory 8.GB 
-
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
 
     input:
     tuple val(basename), path(quant)
@@ -27,8 +27,7 @@ process WriteMtx {
                                             params=list(expanded_features=\"${expanded_features}\", 
                                                         basename = \"${basename}\",
                                                         alevin_quant=\"${quant}\", 
-                                                        gene2type=\"${gene2type}\",
-                                                        author=\"${params.author}\"),
+                                                        gene2type=\"${gene2type}\"),
                                                         knit_root_dir=getwd(), 
                                                         output_dir=paste0(getwd(), \"/html\")
                                             )'

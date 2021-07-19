@@ -6,7 +6,7 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches: [ dev ]
   pull_request:
     branches: [ main ]
 
@@ -33,4 +33,9 @@ jobs:
           
       # Runs a single command using the runners shell
       - name: test_docker
-        run: nextflow run main.nf -profile test,docker
+        run: |
+          nextflow run main.nf -profile test,docker
+
+      - name: test_conda
+        run: |
+          nextflow run main.nf -profile test,conda
