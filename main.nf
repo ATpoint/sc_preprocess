@@ -3,32 +3,34 @@
 /*  
     ---------------------------------------------------------------------------------------------------------------
     Workflow for 10X scRNA-seq:
+
     --||    Creation of an index with salmon comprising the spliced- and unspliced transcriptome
             with the entire genome as decoy, starting from GENCODE reference files.
 
     --||    Quantification of the fastq files with Salmon/Alevin.
 
-    --||    Read into R using tximeta, create spliced- and unspliced count tables, save as mtx.gz for downstream
-            analysis.
-
-    --||    Perform basic QC on the data and create a Rmarkdown summary report.                
+    --||    Read into R using tximeta, create spliced- and unspliced count tables, save as mtx.gz 
+    
     ---------------------------------------------------------------------------------------------------------------
 */ 
 
 nextflow.enable.dsl=2
 
+println ''
+println '|------------------------------------------------------------------'
+println "[Info] This is sc_preprocess version ::: $params.version"
+println '|------------------------------------------------------------------'
+println ''
+
 ch_fastq    = Channel
                 .fromFilePairs(params.fastq, checkIfExists: true)
                 .ifEmpty("No fastq files found")
-
-params.run_mtx = false // decide whether to read the alevin quants and save as mtx.gz       
 
 // Define the final workflow:
 workflow SCRNASEQ {
 
     take:
         genome
-        txtome
         gtf
         fastq
 
@@ -41,42 +43,49 @@ workflow SCRNASEQ {
                                                                                         gene_type:  params.ref_gene_type,
                                                                                         readlength: params.cdna_readlength,
                                                                                         chrM:       params.ref_chrM,
-                                                                                        outdir:     params.idx_outdir)
+                                                                                        outdir:     params.idx_outdir,
+                                                                                        threads:    params.parse_intron_threads,
+                                                                                        mem:        params.parse_intron_mem)
     
     // provide reference genome and transcriptome:
     ParseExonIntronTx (genome, gtf) 
                 
     //-------------------------------------------------------------------------------------------------------------------------------//
     // Index it:
-    include {   AlevinIndex }           from './modules/alevin_index'       addParams(  threads:    params.idx_threads,
-                                                                                        outdir:     params.idx_outdir,
+    include {   AlevinIndex }           from './modules/alevin_index'       addParams(  outdir:     params.idx_outdir,
                                                                                         additional: params.idx_salmonargs,
-                                                                                        label:      params.idx_label)
+                                                                                        threads:    params.idx_threads,
+                                                                                        mem:        params.idx_mem)
 
-    AlevinIndex(genome,                          // genome fasta file channel
+    AlevinIndex(genome,                             // genome fasta file channel
                 ParseExonIntronTx.out.txtome,       // expanded transcriptone (exon+intron)
                 params.idx_name)                    // output index name
 
     //-------------------------------------------------------------------------------------------------------------------------------//
     // Quantify with Alevin:
-    include {   AlevinQuant }           from './modules/alevin_quant'       addParams(  outdir:     params.quant_outdir,
-                                                                                        threads:    params.quant_threads,
-                                                                                        libtype:    params.quant_libtype,
-                                                                                        additional: params.quant_additional,
-                                                                                        label:      params.quant_label)
-    
-    AlevinQuant(fastq,                                        // fastq channel
-                AlevinIndex.out.idx,                // the index itself
-                ParseExonIntronTx.out.tgmap,        // transcript2gene map for gene-level aggregation
-                ParseExonIntronTx.out.rrnagenes,    // list of rRNA gene names
-                ParseExonIntronTx.out.mtgenes)      // list of mito genes
+    if(!params.skip_quant){
+
+        include {   AlevinQuant }           from './modules/alevin_quant'       addParams(  outdir:     params.quant_outdir,
+                                                                                            libtype:    params.quant_libtype,
+                                                                                            additional: params.quant_additional,
+                                                                                            threads:    params.quant_threads,
+                                                                                            mem:        params.quant_mem)
+        
+        AlevinQuant(fastq,                                        // fastq channel
+                    AlevinIndex.out.idx,                // the index itself
+                    ParseExonIntronTx.out.tgmap,        // transcript2gene map for gene-level aggregation
+                    ParseExonIntronTx.out.rrnagenes,    // list of rRNA gene names
+                    ParseExonIntronTx.out.mtgenes)      // list of mito genes
+
+    } else params.skip_mtx = true
 
     //-------------------------------------------------------------------------------------------------------------------------------//
-    if(params.run_mtx){
+    if(!params.skip_mtx){
     
         // Load into R, split into spliced/unspliced, save as mtx.gz:
         include {   WriteMtx }               from './modules/write_mtx'         addParams(  outdir:     params.mtx_outdir,
-                                                                                            author:     params.author)
+                                                                                            threads:    params.mtx_threads,
+                                                                                            mem:        params.mtx_mem)
                                                                                             
         WriteMtx(   AlevinQuant.out.quants.map { file -> tuple(file.baseName, file) },
                     ParseExonIntronTx.out.features,     
@@ -87,5 +96,5 @@ workflow SCRNASEQ {
 
 // Run it:
 workflow { 
-    SCRNASEQ( params.ref_genome, params.ref_txtome, params.ref_gtf, ch_fastq ) 
+    SCRNASEQ( params.ref_genome, params.ref_gtf, ch_fastq ) 
 }

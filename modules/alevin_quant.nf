@@ -2,11 +2,12 @@
 
 process AlevinQuant {
 
+    cpus    params.threads
+    memory  params.mem
+
+    publishDir params.outdir, mode: params.pubmode
+
     tag "$sample_id"
-
-    label params.label
-
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
 
     input:
     tuple val(sample_id), path(reads) // 1

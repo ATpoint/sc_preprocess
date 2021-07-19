@@ -3,10 +3,10 @@
 
 process ParseExonIntronTx {
 
-    cpus 1
-    memory 16.GB
+    cpus    params.threads
+    memory  params.mem
 
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
+    publishDir params.outdir, mode: params.pubmode
 
     input:
     path(genome)            
