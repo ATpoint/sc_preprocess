@@ -29,14 +29,14 @@ NXF_VER=21.04.1 nextflow run atpoint/sc_preprocess -r <commit_sha> -profile sing
 
 -  `--fastq`: path to fastq file pairs, e.g. `--fastq path/to/*_{1,2}.fastq.gz`
 
--  `-profile`: choose a container profile, `-profile singularity` or `-profile docker` (see #software)
-This repository contains an `environment.yml` to create a conda environment. This is not available directly via the workflow so one would need to manually create an environment, e.g. `mamba create --name sc_preprocess --file environment.yml` and then run the workflow locally.  
-For testing one can add `-profile test`. With `-profile slurm` nextflow will submit jobs via the SLURM scheduler.
+-  `-profile`: choose a container profile, either `docker`, `singularity` or `conda`.
+This repository contains an `environment.yml` that was used to build a [Docker image](https://hub.docker.com/r/atpoint/sc_preprocess). Choosing `-profile singularity` will pull it and convert to a Singulartiy image.
+We also added a platform-agnostic environment (`environment_conda.yml`) which sould solve on both Linux and macOS.
+The `-profile conda` uses the latter environment. For testing one can add `-profile test`. With `-profile slurm` nextflow will submit jobs via the SLURM scheduler.
+The `params.queue/clusteroptions` can be used to specify a queue and additional arguments for the scheduler.
 
--  `--idx_label` & `--quant_label` allocate resources:  
-=> for the indexing there is `--idx_label idx_small/idx_big` which allocates 4 or 36 cores and 15 or 40GB of RAM.  
-=> for the quantification there is `--quant_label quant_small/quant_big` which allocates 3 or 36 cores with 6 or 50GB RAM.  
-=> the defaults are the big labels intended for HPC use.  
+-  each process has options to change the threads and memory, intuitively named in the config file. The defaults are tailored for a HPC/cluster node.
+The `-profile test` sets threads/memory to a minimum so it runs on any machine and is suitable for the GitHub Actions CI tests.
 
 We use a naming convention of the fastq files like:
 
@@ -44,11 +44,12 @@ We use a naming convention of the fastq files like:
 
 -  `basename_2.fastq.gz` for R2 (cDNA)
 
+-  the output root directory can be specified via `--outdir_root`, the default is `sc_preprocess_output`. Each process will create subfolders in it.
+
 ## Software
 
-A Docker container is available at [Docker Hub](https://hub.docker.com/r/atpoint/sc_preprocess).  
-When using the Docker or Singularity profile Nextflow will take care of pulling it.
-
+A Docker container is available at 
+When using the Docker or Singularity profile Nextflow will take care of pulling it.  
 ## Citations
 
 -  [nf-core project](https://nf-co.re/)
@@ -69,4 +70,4 @@ When using the Docker or Singularity profile Nextflow will take care of pulling 
 
 -  [Soneson et al (2021) Preprocessing choices affect RNA velocity results for droplet scRNA-seq data. PLoS Computational Biology](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008585)
 
-- [Love et al (2020) Tximeta: Reference sequence checksums for provenance identification in RNA-seq](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007664)
+-  [Love et al (2020) Tximeta: Reference sequence checksums for provenance identification in RNA-seq](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007664)
