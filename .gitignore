@@ -1,0 +1,6 @@
+.DS*
+work
+.nextflow*
+sc_preprocess_output
+cleanup.sh
+trace*

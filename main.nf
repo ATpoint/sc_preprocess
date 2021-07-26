@@ -16,10 +16,13 @@
 
 nextflow.enable.dsl=2
 
+def latest_sha = "git rev-parse HEAD".execute()
+
 println ''
-println '|------------------------------------------------------------------'
-println "[Info] This is sc_preprocess version ::: $params.version"
-println '|------------------------------------------------------------------'
+println '|-------------------------------------------------------------------------------------------------------------'
+println ''
+println "[Info] This is sc_preprocess, latest comitted sha ::: " + latest_sha.text
+println '|-------------------------------------------------------------------------------------------------------------'
 println ''
 
 ch_fastq    = Channel
