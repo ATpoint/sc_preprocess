@@ -44,7 +44,8 @@ We use a naming convention of the fastq files like:
 
 -  `basename_2.fastq.gz` for R2 (cDNA)
 
--  the output root directory can be specified via `--outdir_root`, the default is `sc_preprocess_output`. Each process will create subfolders in it.
+-  by default the pipeline will create folders for the output file in `$launchDir` so the directory from which the Nextflow run was launched. This can be changed with the `--*_outdir` params,
+see the `nextflow.config` file. params are named intuitively.
 
 ## Software
 
