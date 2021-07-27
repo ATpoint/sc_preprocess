@@ -55,8 +55,8 @@ see the `nextflow.config` file. params are named intuitively.
 
 ## Software
 
-A Docker container is available at 
-When using the Docker or Singularity profile Nextflow will take care of pulling it.  
+A Docker container is available at the [Docker Hub](https://hub.docker.com/r/atpoint/sc_preprocess) which can be used using `-profile docker/singularity`. If using `-profile conda` then the `environment_conda.yml` will be used to create a conda environment with all required software.
+
 ## Citations
 
 -  [nf-core project](https://nf-co.re/)
