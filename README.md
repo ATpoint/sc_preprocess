@@ -2,6 +2,12 @@
 
 A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
 
+<br>
+
+![CI](https://github.com/ATpoint/sc_preprocess/actions/workflows/basic_test.yml/badge.svg)
+
+<br>
+
 
 ## Workflow
 
