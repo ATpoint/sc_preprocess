@@ -2,12 +2,14 @@
 
 A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
 
+=> This is the Legacy branch, to document a specific version of this workflow.  
+The Docker image used for this project was [this one here](https://hub.docker.com/layers/atpoint/sc_preprocess/v1.0.0/images/sha256-376dd2253371cb3b996bb40f93ea593fb976dd32e556110bb95476c5d8302301?context=explore).
+
 <br>
 
 ![CI](https://github.com/ATpoint/sc_preprocess/actions/workflows/basic_test.yml/badge.svg)
 
 <br>
-
 
 ## Workflow
 
