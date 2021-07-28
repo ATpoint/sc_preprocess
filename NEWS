@@ -1,7 +1,0 @@
-___| 1.0.0:
-- added small test data that complete in seconds
-- added GitHub Actions CI tests based on the test data
-- added arguments to control threads/mem for every process
-- added arguments to turn off processes downstream of the indexing so indexing can be done independently√
-- added a platform-agnostic conda env that should solve on Linux and macOS
-
