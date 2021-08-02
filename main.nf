@@ -16,12 +16,11 @@
 
 nextflow.enable.dsl=2
 
-def latest_sha = "git rev-parse HEAD".execute()
-
 println ''
 println '|-------------------------------------------------------------------------------------------------------------'
 println ''
-println "[Info] This is sc_preprocess, latest comitted sha ::: " + latest_sha.text
+println "[Info] This is sc_preprocess"
+println ''
 println '|-------------------------------------------------------------------------------------------------------------'
 println ''
 
