@@ -27,7 +27,6 @@ println ''
 
 ch_fastq    = Channel
                 .fromFilePairs(params.fastq, checkIfExists: true)
-                .ifEmpty("No fastq files found")
 
 // Define the final workflow:
 workflow SCRNASEQ {
@@ -74,7 +73,7 @@ workflow SCRNASEQ {
                                                                                             threads:    params.quant_threads,
                                                                                             mem:        params.quant_mem)
         
-        AlevinQuant(fastq,                                        // fastq channel
+        AlevinQuant(fastq,                              // fastq channel
                     AlevinIndex.out.idx,                // the index itself
                     ParseExonIntronTx.out.tgmap,        // transcript2gene map for gene-level aggregation
                     ParseExonIntronTx.out.rrnagenes,    // list of rRNA gene names
@@ -85,7 +84,7 @@ workflow SCRNASEQ {
     //-------------------------------------------------------------------------------------------------------------------------------//
     if(!params.skip_mtx){
     
-        // Load into R, split into spliced/unspliced, save as mtx.gz:
+        // Load into R, split into spliced/unspliced counts, save as generic MatrixMarket file (gzipped):
         include {   WriteMtx }               from './modules/write_mtx'         addParams(  outdir:     params.mtx_outdir,
                                                                                             threads:    params.mtx_threads,
                                                                                             mem:        params.mtx_mem)
