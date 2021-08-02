@@ -27,7 +27,6 @@ println ''
 
 ch_fastq    = Channel
                 .fromFilePairs(params.fastq, checkIfExists: true)
-                .ifEmpty("No fastq files found")
 
 // Define the final workflow:
 workflow SCRNASEQ {
