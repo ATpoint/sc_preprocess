@@ -22,7 +22,7 @@ process WriteMtx {
 
     script:
     """
-    Rscript --vanilla -e 'rmarkdown::render(input=\"${baseDir}/bin/mtx.Rmd\", 
+    Rscript --vanilla -e 'rmarkdown::render(input=\"${baseDir}/bin/mtx.rmd\", 
                                             output_file=\"${basename}_mtx.html\",
                                             params=list(expanded_features=\"${expanded_features}\", 
                                                         basename = \"${basename}\",

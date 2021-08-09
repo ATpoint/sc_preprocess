@@ -24,7 +24,7 @@ process ParseExonIntronTx {
 
     script:
     """
-    Rscript --vanilla -e 'rmarkdown::render(input=\"${baseDir}/bin/parse_introns.Rmd\", 
+    Rscript --vanilla -e 'rmarkdown::render(input=\"${baseDir}/bin/parse_introns.rmd\", 
                                             output_file=\"parse_introns.html\",
                                             params=list(genome=\"${genome}\", 
                                                         gtf=\"${gtf}\",
