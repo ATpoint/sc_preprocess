@@ -8,4 +8,4 @@ RUN apt update && \
 
 RUN mamba env update --name base --file environment.yml
 
-CMD echo "This is the atac_chip_preprocess image with versions:" $(mamba --version | tr "\n" "\ ")
+CMD echo "This is the sc_preprocess image with versions:" $(mamba --version | tr "\n" "\ ")
