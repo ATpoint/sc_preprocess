@@ -7,7 +7,7 @@ process WriteMtx {
 
     publishDir params.outdir, mode: params.pubmode
 
-    tag "Write mtx.gz: $basename"
+    tag "mtx.gz: $basename"
 
     input:
     tuple val(basename), path(quant)
@@ -17,20 +17,10 @@ process WriteMtx {
     output:
     path("*.mtx.gz"), emit: mtx
     path("*.tsv.gz"), emit: colrowannot
-    path("html/*.html")
-    path("*.md"), optional: true
-
+    
     script:
     """
-    Rscript --vanilla -e 'rmarkdown::render(input=\"${baseDir}/bin/mtx.rmd\", 
-                                            output_file=\"${basename}_mtx.html\",
-                                            params=list(expanded_features=\"${expanded_features}\", 
-                                                        basename = \"${basename}\",
-                                                        alevin_quant=\"${quant}\", 
-                                                        gene2type=\"${gene2type}\"),
-                                                        knit_root_dir=getwd(), 
-                                                        output_dir=paste0(getwd(), \"/html\")
-                                            )'
+    Rscript --vanilla $baseDir/bin/mtx.R \"${basename}\" ${quant}  ${expanded_features} ${gene2type} 
     """ 
 
 }
