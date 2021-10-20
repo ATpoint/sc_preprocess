@@ -1,48 +1,26 @@
----
-title: "`r paste(params$title, params$basename)`"
-author: "`r params$author`"
-date: "`r format(Sys.time(), '%d-%b-%Y')`"
-output:
-  rmdformats::readthedown:
-    keep_md: false
-params:
-  author:             ""
-  title:              "scRNAseq: Alevin2Mtx"
-  basename:           ""
-  alevin_quant:       "" 
-  expanded_features:  ""
-  gene2type:          ""
----
+#/
+#/ Read quantifications from Alevin and save as MatrixMarket (mtx) file
+#/
 
-## Introduction
-  
-Read the Alevin quantifications (`quants_mat.gz` files) into R using [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html).  
-Then split the quantifications into spliced (exon) and unspliced (intron) count tables,
-and then saves these tables as gzipped MatrixMarket (mtx) files to disk together with the col- and rowdata as tsv files.
-  
-## Packages & Setup
-  
-```{r}
+#/ parse arguments from command line:
+args=commandArgs(trailingOnly=TRUE)
+if (length(args) != 4) {
+    stop("[invalid params]", "\n",
+         "mtx.R <basename> <alevin_quant> <expanded_features> <gene2type>")
+}
 
+params <- list()
+params$basename <- args[1]
+params$alevin_quant <- args[2]
+params$expanded_features <- args[3]
+params$gene2type <- args[4]
+
+#/ load packages:
 suppressPackageStartupMessages(library(fishpond))
 suppressPackageStartupMessages(library(Matrix))
 suppressPackageStartupMessages(library(rtracklayer))
 suppressPackageStartupMessages(library(tximeta))
 suppressPackageStartupMessages(library(SummarizedExperiment))
-
-stop_quietly <- function() {
-  opt <- options(show.error.messages = FALSE)
-  on.exit(options(opt))
-  stop()
-}
-
-```
-
-## Load data
-
-We load the quantifications with `tximeta` (Love et al.).
-  
-```{r main}
 
 #/ Read the table mapping intronic to exonic features:
 cg <- read.delim(params$expanded_features, header=TRUE, as.is=TRUE)
@@ -72,16 +50,6 @@ m <- merge(x=data.frame(gene_id=rownames(se)),
   
 rowData(se)  <- DataFrame(m)
 
-```
-
-## Save as MatrixMarket file
-
-Save the spliced- and unspliced counts in the generic mtx format and compress with gzip.
-These can then later be provided e.g. as supplementary material in a GEP submission so the 
-user could reproduce the analysis from these files rather than starting from scratch with the fastq files.
-  
-```{r}
-
 #/ Save to disk as mtx and compress:
 spl    <- paste(params$basename, "spliced.mtx", sep="_")
 unspl <-  paste(params$basename, "unspliced.mtx", sep="_")
@@ -104,13 +72,3 @@ file.rowdata <- gzfile(paste(params$basename, "rowdata.tsv.gz", sep="_"), "w")
 write.table(x=data.frame(rowData(se)), file=file.rowdata,
             col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
 close(file.rowdata)
-
-```
-
-## sessionInfo
-
-```{r}
-
-sessionInfo()
-
-```

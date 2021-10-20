@@ -42,14 +42,14 @@ workflow SCRNASEQ {
     
     //-------------------------------------------------------------------------------------------------------------------------------//
     // Create the spliced/unspliced expanded transcriptome:
-    include {   ParseExonIntronTx }     from './modules/ParseExonIntronTx'  addParams(  gene_name:  params.ref_gene_name,
-                                                                                        gene_id:    params.ref_gene_id,
-                                                                                        gene_type:  params.ref_gene_type,
-                                                                                        readlength: params.cdna_readlength,
-                                                                                        chrM:       params.ref_chrM,
-                                                                                        outdir:     params.idx_outdir,
-                                                                                        threads:    params.parse_intron_threads,
-                                                                                        mem:        params.parse_intron_mem)
+    include {   ParseExonIntronTx }     from './modules/parse_exon_intron_tx.nf'  addParams(  gene_name:  params.ref_gene_name,
+                                                                                              gene_id:    params.ref_gene_id,
+                                                                                              gene_type:  params.ref_gene_type,
+                                                                                              readlength: params.cdna_readlength,
+                                                                                              chrM:       params.ref_chrM,
+                                                                                              outdir:     params.idx_outdir,
+                                                                                              threads:    params.parse_intron_threads,
+                                                                                              mem:        params.parse_intron_mem)
     
     // provide reference genome and transcriptome:
     ParseExonIntronTx (genome, gtf) 
