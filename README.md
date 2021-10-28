@@ -17,9 +17,9 @@ A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
 
 - download genome, transcriptome and GTF reference files from [GENCODE version M25](https://www.gencodegenes.org/mouse/release_M25.html).
 
-- create an index of spliced- and unspliced transcript sequences based on the reference annotations, following the [Alevin Velocity tutorial(https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/)
+- create an index of spliced- and unspliced transcript sequences based on the reference annotations, following the [Alevin Velocity tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/)
 
-- create a merged of the exon+intron transcriptome with the mouse genome into a `gentrome` and index it with `salmon`
+- create a "gentrome", so a merge of the exon+intron transcriptome and the mouse genome, the latter serving as mapping decoy for salmon quantification
 
 - perform cell barcode detection, UMI deduplication and read quantification with [Alevin](https://salmon.readthedocs.io/en/latest/)
 
@@ -27,7 +27,7 @@ A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
 
 ## Usage
 
-As the workflow is hosted on GitHub it can be pulled directly via nextflow. On the HPC we use:
+As the workflow is hosted on GitHub it can be pulled directly via nextflow, e.g.:
 
 ```bash
 
@@ -63,9 +63,9 @@ A Docker container is available at the [Docker Hub](https://hub.docker.com/r/atp
 
 ## Citations
 
--  [nf-core project](https://nf-co.re/)
+-  [nf-core website](https://nf-co.re/)
 
--  [Ewels et al (2020) Nature Biotechnology volume 38, pages 276–278](https://www.nature.com/articles/s41587-020-0439-x)
+-  [nf-core paper => Ewels et al (2020) Nature Biotechnology volume 38, pages 276–278](https://www.nature.com/articles/s41587-020-0439-x)
 
 -  [Nextflow Docs](https://www.nextflow.io/docs/latest/index.html#)
 
