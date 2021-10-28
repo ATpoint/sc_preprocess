@@ -1,11 +1,11 @@
-FROM condaforge/mambaforge:4.10.3-1
+FROM mambaorg/micromamba:0.15.3
 
-COPY ["environment.yml", "./"]
+USER root 
+
+COPY --chown=micromamba:micromamba environment.yml environment.yml
 
 RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends tzdata wget nano && \
-    apt-get clean
-
-RUN mamba env update --name base --file environment.yml
-
-CMD echo "This is the sc_preprocess image with versions:" $(mamba --version | tr "\n" "\ ")
+    DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends tzdata wget nano && \ 
+    apt-get clean && \
+    micromamba install -y -n base -f environment.yml && \   
+    micromamba clean --all --yes
