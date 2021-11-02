@@ -1,6 +1,6 @@
 # sc_preprocess
 
-A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
+A Nextflow pipeline for preprocessing of 10X scRNA-seq data using [Alevin](https://salmon.readthedocs.io/en/latest/alevin.html) based on the [COMBINE lab tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/).
 
 <br>
 
@@ -15,19 +15,11 @@ A Nextflow pipeline for preprocessing of 10X scRNA-seq data using Alevin.
 
 ## Workflow
 
-- download genome, transcriptome and GTF reference files from [GENCODE version M25](https://www.gencodegenes.org/mouse/release_M25.html).
+The workflow first creates a mapping index using both the spliced- and unspliced transcripts as well as the entire genome (as a mapping decoy) using Salmon. The spliced- and unspliced transcripts are parsed from a reference GTF using [eisaR](https://bioconductor.org/packages/release/bioc/html/eisaR.html). It then uses Alevin for barcode detection, UMI deduplication and Salmon for read quantification. The obtained quantifications are then split into spliced- and unspliced counts at the gene level using [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html) and then saved in as `mtx.gz` files together with the column- and row annotations.
 
-- create an index of spliced- and unspliced transcript sequences based on the reference annotations, following the [Alevin Velocity tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/)
+## Usage / Parameters
 
-- create a "gentrome", so a merge of the exon+intron transcriptome and the mouse genome, the latter serving as mapping decoy for salmon quantification
-
-- perform cell barcode detection, UMI deduplication and read quantification with [Alevin](https://salmon.readthedocs.io/en/latest/)
-
-- read quantifications into R with `tximeta`, split into spliced- and unspliced counts and save as MatrixMarket (mtx) to disk for easy distribution of data
-
-## Usage
-
-As the workflow is hosted on GitHub it can be pulled directly via nextflow, e.g.:
+On HPC using SLURM and Singularity use:
 
 ```bash
 
@@ -35,31 +27,40 @@ NXF_VER=21.04.1 nextflow run atpoint/sc_preprocess -r <commit_sha> -profile sing
 
 ```
 
-**Details:**
+### Params
 
--  `--fastq`: path to fastq file pairs, e.g. `--fastq path/to/*_{1,2}.fastq.gz`
-
--  `-profile`: choose a container profile, either `docker`, `singularity` or `conda`.
-This repository contains an `environment.yml` that was used to build a [Docker image](https://hub.docker.com/r/atpoint/sc_preprocess). Choosing `-profile singularity` will pull it and convert to a Singulartiy image.
-We also added a platform-agnostic environment (`environment_conda.yml`) which sould solve on both Linux and macOS.
-The `-profile conda` uses the latter environment. For testing one can add `-profile test`. With `-profile slurm` nextflow will submit jobs via the SLURM scheduler.
-The `params.queue/clusteroptions` can be used to specify a queue and additional arguments for the scheduler.
-
--  each process has options to change the threads and memory, intuitively named in the config file. The defaults are tailored for a HPC/cluster node.
-The `-profile test` sets threads/memory to a minimum so it runs on any machine and is suitable for the GitHub Actions CI tests.
-
-We use a naming convention of the fastq files like:
-
--  `basename_1.fastq.gz` for R1 (CB/UMI)
-
--  `basename_2.fastq.gz` for R2 (cDNA)
-
--  by default the pipeline will create folders for the output file in `$launchDir` so the directory from which the Nextflow run was launched. This can be changed with the `--*_outdir` params,
-see the `nextflow.config` file. params are named intuitively.
+- pubmode: publishing mode, default relllink
+- fastq: path to fastq file pairs, naming conventions must be `basename_1/2.fastq.gz`
+- ref_genome: path or remote link to `fa.gz` genome fasta
+- ref_gtf: path or remote link to `gtf.gz` GTF file
+- ref_gene_name: name of gene name column in GTF, default `gene_name`
+- ref_gene_id: name of gene id column in GTF, default `gene_id`
+- ref_gene_type: name of gene type column in GTF, default `gene_type`
+- ref_chrM: name of mitochondrial chromosome, default `chrM`
+- cdna_readlength: length of cDNA (R2) read, default 91bp
+- parse_intron_threads: threads for exon/intron parsing, leave at 1
+- parse_intron_mem: memory for exin/intron parsing, default 16.GB, enough for mouse, not tested for human
+- idx_outdir: name for index file directiry, default `./alevinIndex`
+- idx_name: name of the folder containing the salmon/alevin idx files, default `idx`
+- idx_salmonargs: further arguments beyond [ -t -d -i -p ] for salmon/alevin indexing, default `--sparse --gencode'`, we generally expect GENCODE reference files!
+- idx_threads: threads for indexing, default 32
+- idx_mem: memory for indexing, default 50.GB
+- skip_quant: logical, whether to stop after indexing and skip quantification
+- quant_outdir: output dir for quantifications, default `./alevinQuant`
+- quant_libtype: library type, leave at default `ISR` for 10X data
+- quant_additional: additional quant args, including the chemistry, beyond [ -i --tgMap --mrna --rrna -l -p -o -1 -2 ], default `--chromiumV3` is appropriate for 10X v3 experiments
+- quant_threads: threads for quantification, default 8
+- quant_mem: memory for quantification, default 40.GB
+- skip_mtx: logical, whether to save counts as `mtx.gz` files
+- mtx_outdir: outdir for `mtx.gz` files, default `./mtx`
+- mtx_threads: threads for mtx generation, leave at 1
+- mtx_mem: memory for mtx generation, default 8.GB
+- queue: name of cluster queue, default `normal` to submit to normal queue
+- clusteroptions: options for cluster scheduler, default `--time=12:00:00` to submit a 12h job
 
 ## Software
 
-A Docker container is available at the [Docker Hub](https://hub.docker.com/r/atpoint/sc_preprocess) which can be used using `-profile docker/singularity`. If using `-profile conda` then the `environment_conda.yml` will be used to create a conda environment with all required software.
+A Docker container is available at the [Docker Hub](https://hub.docker.com/r/atpoint/sc_preprocess) which can be used using `-profile docker/singularity`. If using `-profile conda` then the `environment.yml` will be used to create a conda environment with all required software.
 
 ## Citations
 
