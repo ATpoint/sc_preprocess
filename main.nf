@@ -1,104 +1,204 @@
 #! /usr/bin/env nextflow
 
-/*  
-    ---------------------------------------------------------------------------------------------------------------
-    Workflow for 10X scRNA-seq:
-
-    --||    Creation of an index with salmon comprising the spliced- and unspliced transcriptome
-            with the entire genome as decoy, starting from GENCODE reference files.
-
-    --||    Quantification of the fastq files with Salmon/Alevin.
-
-    --||    Read into R using tximeta, create spliced- and unspliced count tables, save as mtx.gz 
-    
-    ---------------------------------------------------------------------------------------------------------------
-*/ 
-
 nextflow.enable.dsl=2
 
-println ''
-println '|-------------------------------------------------------------------------------------------------------------'
-println ''
-println "[Info] This is sc_preprocess"
-println ''
-println "The below summary of all params can be found in the .nextflow.log file:" 
-println("$params")
-println ''
-println '|-------------------------------------------------------------------------------------------------------------'
-println ''
+//------------------------------------------------------------------------
 
-ch_fastq    = Channel
-                .fromFilePairs(params.fastq, checkIfExists: true)
+evaluate(new File("${baseDir}/functions/validate_schema_params.nf"))
 
-// Define the final workflow:
-workflow SCRNASEQ {
+//------------------------------------------------------------------------
+
+include { ValidateSamplesheet   }   from './modules/validate_samplesheet.nf'    addParams(  outdir: params.outdir)
+
+include { ParseExonIntronTx     }   from './modules/parse_exon_intron_tx.nf'    addParams(  gene_name:      params.gene_name,
+                                                                                            gene_id:        params.gene_id,
+                                                                                            gene_type:      params.gene_type,
+                                                                                            chrM:           params.chrM,
+                                                                                            rrna:           params.rrna,
+                                                                                            outdir:         params.idx_outdir)
+
+include { AlevinIndex           }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir,
+                                                                                            additional:     params.idx_args)
+
+include { AlevinIndexSF         }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir)
+
+
+
+include { AlevinQuant           }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
+                                                                                            libtype:        params.quant_libtype,
+                                                                                            additional:     params.quant_args)
+
+include { AlevinQuantSF         }   from './modules/alevin_quant'            addParams(  outdir:         params.quant_outdir,
+                                                                                            libtype:        params.quant_libtype,  
+                                                                                            suffix:         params.quant_sf_sfx,
+                                                                                            additional:     params.quant_sf_args)
+
+include { WriteMtx              }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
+
+include { WriteMtxSF            }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
+                                                                                            
+
+
+//------------------------------------------------------------------------      
+
+workflow VALIDATE {
+
+    take:
+        samplesheet
+        
+    main:        
+        ValidateSamplesheet(samplesheet) 
+
+    emit:
+        samplesheet = ValidateSamplesheet.out.ssheet
+
+}
+
+workflow INDEX_GENTROME {
 
     take:
         genome
         gtf
-        fastq
+
+    main:        
+        ParseExonIntronTx (genome, gtf) 
+        AlevinIndex(genome, ParseExonIntronTx.out.txtome, params.idx_name)     
+
+     emit:
+        tgmap = ParseExonIntronTx.out.tgmap
+        rrna  = ParseExonIntronTx.out.rrnagenes
+        mtrna = ParseExonIntronTx.out.mtgenes
+        idx   = AlevinIndex.out.idx      
+        ftrs  = ParseExonIntronTx.out.features
+        g2t   = ParseExonIntronTx.out.gene2type
+
+}
+
+workflow INDEX_SF {
+
+    take:
+        sf_file
+        idxname
 
     main:
-    
-    //-------------------------------------------------------------------------------------------------------------------------------//
-    // Create the spliced/unspliced expanded transcriptome:
-    include {   ParseExonIntronTx }     from './modules/parse_exon_intron_tx.nf'  addParams(  gene_name:  params.ref_gene_name,
-                                                                                              gene_id:    params.ref_gene_id,
-                                                                                              gene_type:  params.ref_gene_type,
-                                                                                              readlength: params.cdna_readlength,
-                                                                                              chrM:       params.ref_chrM,
-                                                                                              outdir:     params.idx_outdir,
-                                                                                              threads:    params.parse_intron_threads,
-                                                                                              mem:        params.parse_intron_mem)
-    
-    // provide reference genome and transcriptome:
-    ParseExonIntronTx (genome, gtf) 
-                
-    //-------------------------------------------------------------------------------------------------------------------------------//
-    // Index it:
-    include {   AlevinIndex }           from './modules/alevin_index'       addParams(  outdir:     params.idx_outdir,
-                                                                                        additional: params.idx_salmonargs,
-                                                                                        threads:    params.idx_threads,
-                                                                                        mem:        params.idx_mem)
+        AlevinIndexSF(sf_file, idxname)
 
-    AlevinIndex(genome,                             // genome fasta file channel
-                ParseExonIntronTx.out.txtome,       // expanded transcriptone (exon+intron)
-                params.idx_name)                    // output index name
+    emit: 
+        idx    = AlevinIndexSF.out.idx
+        tgmap  = AlevinIndexSF.out.tgmap
 
-    //-------------------------------------------------------------------------------------------------------------------------------//
-    // Quantify with Alevin:
-    if(!params.skip_quant){
-
-        include {   AlevinQuant }           from './modules/alevin_quant'       addParams(  outdir:     params.quant_outdir,
-                                                                                            libtype:    params.quant_libtype,
-                                                                                            additional: params.quant_additional,
-                                                                                            threads:    params.quant_threads,
-                                                                                            mem:        params.quant_mem)
-        
-        AlevinQuant(fastq,                              // fastq channel
-                    AlevinIndex.out.idx,                // the index itself
-                    ParseExonIntronTx.out.tgmap,        // transcript2gene map for gene-level aggregation
-                    ParseExonIntronTx.out.rrnagenes,    // list of rRNA gene names
-                    ParseExonIntronTx.out.mtgenes)      // list of mito genes
-
-    } else params.skip_mtx = true
-
-    //-------------------------------------------------------------------------------------------------------------------------------//
-    if(!params.skip_mtx){
-    
-        // Load into R, split into spliced/unspliced counts, save as generic MatrixMarket file (gzipped):
-        include {   WriteMtx }               from './modules/write_mtx'         addParams(  outdir:     params.mtx_outdir,
-                                                                                            threads:    params.mtx_threads,
-                                                                                            mem:        params.mtx_mem)
-                                                                                            
-        WriteMtx(   AlevinQuant.out.quants.map { file -> tuple(file.baseName, file) },
-                    ParseExonIntronTx.out.features,     
-                    ParseExonIntronTx.out.gene2type)   
-    }
-   
-}                
-
-// Run it:
-workflow { 
-    SCRNASEQ( params.ref_genome, params.ref_gtf, ch_fastq ) 
 }
+
+workflow QUANT {
+
+    take: 
+        fastq
+        tgmap  
+        rrnagenes
+        mtgenes
+        idx_gentrome
+
+    main:
+        AlevinQuant(fastq, idx_gentrome, tgmap, rrnagenes, mtgenes)
+
+    emit:
+        quants = AlevinQuant.out.quants     
+
+}
+
+workflow QUANT_SF {
+
+    take: 
+        fastq  
+        idx
+        tgmap
+
+    main:
+        AlevinQuantSF(fastq, idx, tgmap)
+
+    emit:
+        quants = AlevinQuantSF.out.quants                
+
+}
+
+workflow WRITE_MTX {
+
+    take:
+        quants
+        features
+        gene2type
+
+    main:    
+        WriteMtx(quants, features, gene2type) 
+
+}
+
+workflow WRITE_MTX_SF {
+
+    take:
+        quants
+
+    main:    
+        WriteMtxSF(quants) 
+
+}
+
+//------------------------------------------------------------------------
+
+// samplesheet channel:
+if(params.samplesheet != '') { ch_samplesheet_in = Channel.fromPath(params.samplesheet, checkIfExists: true) }
+
+//------------------------------------------------------------------------
+
+// Workflow in a logical order:
+workflow SC_PREPROCESS { 
+    
+    // Before doing anything else, validate the samplesheet:
+    if(params.samplesheet != ''){
+
+        VALIDATE(ch_samplesheet_in)
+        // channel with the validated samplesheet
+        ch_samplesheet = VALIDATE.out.samplesheet.splitCsv(header: true)
+
+        // channel with the transcriptomic fastq pairs:
+        ch_input_quant = ch_samplesheet.map { k -> 
+            if(k['is_sf']=='false') {
+                tuple(k['sample_id'], k['R1'], k['R2'], k['is_sf'])
+            } else null
+        }.groupTuple(by: 0)
+
+        // channel with the feature barcode fastq pairs:
+        ch_input_quant_sf = ch_samplesheet.map { k -> 
+            if(k['is_sf']=="true") {
+                tuple(k['sample_id'], k['R1'], k['R2'], k['is_sf'])
+            } else null
+        }.groupTuple(by: 0)
+
+    }
+
+    // Index gentrome and then quantify against it:
+    if(params.samplesheet != ''){   
+
+        INDEX_GENTROME(params.genome, params.gtf)
+
+        QUANT(ch_input_quant, INDEX_GENTROME.out.tgmap, INDEX_GENTROME.out.rrna, 
+              INDEX_GENTROME.out.mtrna, INDEX_GENTROME.out.idx)
+
+        WRITE_MTX(QUANT.out.quants, INDEX_GENTROME.out.ftrs, INDEX_GENTROME.out.g2t)
+
+    }
+
+    // Index SFs and then quantify against it:
+    if(params.features_file!=''){ // & !ch_input_quant_sf.toList().isEmpty()){
+
+        INDEX_SF(params.features_file, "idx_sf")
+
+        QUANT_SF(ch_input_quant_sf, INDEX_SF.out.idx, INDEX_SF.out.tgmap)
+
+        WRITE_MTX_SF(QUANT_SF.out.quants)
+        
+    }
+
+}
+
+workflow { SC_PREPROCESS() }
