@@ -3,10 +3,13 @@
 
 process ParseExonIntronTx {
 
-    cpus    params.threads
-    memory  params.mem
+    label 'process_parse_exon_intron'
 
-    publishDir params.outdir, mode: params.pubmode
+    publishDir params.outdir, mode: params.publishmode
+
+    if(workflow.profile.contains('conda'))  { conda "$params.environment" }
+    if(workflow.profile.contains('docker')) { container "$params.container" }
+    if(workflow.profile.contains('singularity')) { container "$params.container" }
 
     input:
     path(genome)            
@@ -25,7 +28,7 @@ process ParseExonIntronTx {
     """
     Rscript --vanilla \
         $baseDir/bin/parse_introns.R \
-            $genome $gtf \"$params.gene_name\" \"$params.gene_id\" \"$params.gene_type\" $params.readlength \"$params.chrM\"
+            $genome $gtf \"$params.gene_name\" \"$params.gene_id\" \"$params.gene_type\" \"$params.chrM\" \"$params.rrna\"
     """
 
 }
