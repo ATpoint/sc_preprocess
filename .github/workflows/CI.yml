@@ -39,8 +39,6 @@ jobs:
       # Runs a single command using the runners shell
       - name: test_docker
         run: |
-          NXF_VER=21.04.3 nextflow run main.nf -profile test,docker
+          NXF_VER=21.10.6 nextflow run main.nf -profile test,docker
 
-      - name: test_conda
-        run: |
-          NXF_VER=21.04.3 nextflow run main.nf -profile test,conda
+   
