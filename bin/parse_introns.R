@@ -1,12 +1,13 @@
-#/
-#/ Create a spliced+unspliced transcriptome from genome and GTF files using eisaR,
-#/ see https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/
+#----------------------------------------
+# Create a spliced+unspliced transcriptome from genome and GTF files using eisaR,
+# see https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/
+#----------------------------------------
 
 #/ parse arguments from command line:
 args=commandArgs(trailingOnly=TRUE)
 if (length(args) != 7) {
     stop("[invalid params]", "\n",
-         "parse_introns.R <genome> <gtf> <gene_name> <gene_id> <gene_type> <readlength> <chrM>")
+         "parse_introns.R <genome> <gtf> <gene_name> <gene_id> <gene_type> <chrM> <rrna>")
          
 }
 
@@ -16,22 +17,20 @@ params$gtf <- args[2]
 params$gene_name <- args[3]
 params$gene_id <- args[4]
 params$gene_type <- args[5]
-params$readlength <- args[6]
-params$chrM <- args[7]
+params$readlength <- 150 # just hardcode it to be consistent, and most sequencing is anyway 2x150
+params$chrM <- args[6]
+params$rrna <- args[7]
 
 #/ load packages:
-suppressPackageStartupMessages(library(Biostrings))
-suppressPackageStartupMessages(library(BSgenome))
-suppressPackageStartupMessages(library(eisaR))
-suppressPackageStartupMessages(library(GenomicFeatures))
-suppressPackageStartupMessages(library(RhpcBLASctl))
-suppressPackageStartupMessages(library(rtracklayer))
+suppressMessages({
+  library(Biostrings)
+  library(BSgenome)
+  library(eisaR)
+  library(GenomicFeatures)
+  library(rtracklayer)  
+})
 
-#/ disable implicit multithreading so script is guaranteed to be single-threaded:
-RhpcBLASctl::blas_set_num_threads(1)
-RhpcBLASctl::omp_set_num_threads(1)
-
-#/ read GTFas GRanges:
+#/ read GTF as GRanges:
 gtf.gr <- import(params$gtf)
 
 #/ Verify gene_name, gene_id and gene_type from params are part of that GTF:
@@ -48,6 +47,13 @@ checkExistCol <- function(x,  # gtf
 checkExistCol(gtf.gr, params$gene_name)
 checkExistCol(gtf.gr, params$gene_type)
 checkExistCol(gtf.gr, params$gene_id)
+
+#/ check if chrM exists as chromosome and rRNA as gene_type:
+if(!params$chrM %in% levels(seqnames(gtf.gr))) 
+  stop("value of <chrM> is not a chromosome in the GTF!")
+
+if(params$rrna %in% unique(gtf.gr$gene_type)) 
+  stop("value of <rrna> is not a gene type in the GTF!")
 
 #/ extract introns from GTF based on the given read length:
 grl <- eisaR::getFeatureRanges(
