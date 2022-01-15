@@ -1,6 +1,6 @@
-#/
-#/ Read quantifications from Alevin and save as MatrixMarket (mtx) file
-#/
+#----------------------------------------
+# Read quantifications from Alevin, split into exonic and intronic parts and save as mtx.gz
+#----------------------------------------
 
 #/ parse arguments from command line:
 args=commandArgs(trailingOnly=TRUE)
@@ -16,11 +16,13 @@ params$expanded_features <- args[3]
 params$gene2type <- args[4]
 
 #/ load packages:
-suppressPackageStartupMessages(library(fishpond))
-suppressPackageStartupMessages(library(Matrix))
-suppressPackageStartupMessages(library(rtracklayer))
-suppressPackageStartupMessages(library(tximeta))
-suppressPackageStartupMessages(library(SummarizedExperiment))
+suppressMessages({
+  library(fishpond)
+  library(Matrix)
+  library(rtracklayer)
+  library(tximeta)
+  library(SummarizedExperiment)
+})
 
 #/ Read the table mapping intronic to exonic features:
 cg <- read.delim(params$expanded_features, header=TRUE, as.is=TRUE)
@@ -36,10 +38,6 @@ se <- tximeta::tximeta(
 #/ split into spliced- and unspliced:
 se <- tximeta::splitSE(se, cg, assayName = "counts")
 assayNames(se)[1] <- "counts"
-
-#/ colnames are currently the per-cell barcode, put that into the colData:
-se$cell_barcode <- colnames(se)
-colnames(se) <- paste0(params$basename, "_", colnames(se))
 
 #/ add the gene_id, gene_name and gene_type data.frame to the rowData:  
 gene2type <- read.delim(params$gene2type, header=TRUE, as.is=TRUE)
@@ -63,12 +61,12 @@ system(command = paste("gzip", spl))
 system(command = paste("gzip", unspl))
 
 #/ Save col- and rowdata and compress:
-file.colnames <- gzfile(paste(params$basename, "colnames.tsv.gz", sep="_"), "w")
-write.table(x=data.frame(Barcodes=se$cell_barcode, Colnames=colnames(se)),
+file.colnames <- gzfile(paste(params$basename, "barcodes.tsv.gz", sep="_"), "w")
+write.table(x=data.frame(barcodes=colnames(se)),
             file=file.colnames, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
 close(file.colnames)
 
-file.rowdata <- gzfile(paste(params$basename, "rowdata.tsv.gz", sep="_"), "w")
+file.rowdata <- gzfile(paste(params$basename, "features.tsv.gz", sep="_"), "w")
 write.table(x=data.frame(rowData(se)), file=file.rowdata,
             col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
 close(file.rowdata)
