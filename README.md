@@ -13,5 +13,3 @@ A Nextflow pipeline for preprocessing of 10X scRNA-seq data using [Alevin](https
 <br>
 
 Documentation will follow...
-
-CI tests will currently fail because the samplesheet still has hardcoded paths. Need to find a way to make this compatible with the test data.
