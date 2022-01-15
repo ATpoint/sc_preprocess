@@ -26,7 +26,7 @@ jobs:
   #=======================================================================================================
   
   # Test via Docker and conda:
-  docker_and_conda:
+  SC_PREPROCESS_CI_TESTS:
     
     runs-on: ubuntu-latest
 
@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install Nextflow
+      - name: INSTALL-NEXTFLOW
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
@@ -43,7 +43,11 @@ jobs:
         run: NXF_VER=21.10.6 nextflow run main.nf -profile docker,test
 
       - name: TEST-CONDA
-        run: NXF_VER=21.10.6 nextflow run main.nf -profile conda,test
+        run: |
+          conda config --add channels r
+          conda config --add channels conda-forge
+          conda config --add channels bioconda
+          NXF_VER=21.10.6 nextflow run main.nf -profile conda,test
 
       - uses: eWaterCycle/setup-singularity@v7
         with:
