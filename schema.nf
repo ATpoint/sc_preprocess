@@ -8,6 +8,7 @@ def Map schema = [:] // don't change this line
 
 // --------------------------------------------------------------------------------------------------------------
 
+// enter here a directory that all results will be collected in (in subfolders as defined below)
 overall_outdir        = "$launchDir/sc_preprocess_results/"
 
 // generic options:
