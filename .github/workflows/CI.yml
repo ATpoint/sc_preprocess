@@ -42,31 +42,12 @@ jobs:
       - name: TEST-DOCKER
         run: NXF_VER=21.10.6 nextflow run main.nf -profile docker,test
 
-      - name: TES-CONDA
+      - name: TEST-CONDA
         run: NXF_VER=21.10.6 nextflow run main.nf -profile conda,test
-
-  #=======================================================================================================
-  
-  # Test via Singularity
-
-  singularity: 
-
-    runs-on: ubuntu-latest
-
-    steps:       
-
-      - uses: actions/checkout@v2
 
       - uses: eWaterCycle/setup-singularity@v7
         with:
           singularity-version: 3.8.3
-
-      - name: Install Nextflow
-        run: |
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-          
+    
       - name: TEST-SINGULARITY
-        run: NXF_VER=21.10.6 nextflow run main.nf -profile singularity,test
-
-     
+        run: NXF_VER=21.10.6 nextflow run main.nf -profile singularity,test  
