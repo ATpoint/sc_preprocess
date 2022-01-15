@@ -1,6 +1,9 @@
 # sc_preprocess
 
-A Nextflow pipeline for preprocessing of 10X scRNA-seq data using [Alevin](https://salmon.readthedocs.io/en/latest/alevin.html) supporting output of spliced- and unspliced counts for velocity analysis as well as feature barcoding experiments (CITE-seq).
+A Nextflow pipeline for preprocessing of 10X scRNA-seq data using [Alevin](https://salmon.readthedocs.io/en/latest/alevin.html). 
+This includes quantification of the data against a genome-decoyed expanded (exonic+intronic) transcriptome to output spliced and unspliced counts for velocity analysis as well as support for feature barcoding experiments.
+
+Documentation will follow soon. The pipeline is currently under development.
 
 <br>
 
@@ -12,4 +15,3 @@ A Nextflow pipeline for preprocessing of 10X scRNA-seq data using [Alevin](https
 
 <br>
 
-Documentation will follow...
