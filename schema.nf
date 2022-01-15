@@ -48,8 +48,11 @@ schema.quant_sf_sfx   = [value: '_SF', type: 'string']
 // related to mtx
 schema.mtx_outdir     = [value: "${overall_outdir}/mtx/", type: 'string', mandatory: true]    
 
+// related to alevinQC:
+schema.qc_outdir      = [value: "${overall_outdir}/alevinQC/", type: 'string', mandatory: true]
+
 // related to the container/environment for the R/Bioconductor part of this workflow
-schema.container      = [value:'atpoint/sc_preprocess:v1.3.2', type:'string', mandatory:true]
+schema.container      = [value:'atpoint/sc_preprocess:v1.4.0', type:'string', mandatory:true]
 schema.environment    = [value: "$baseDir/environment.yml", type:'string', mandatory: true ]
 
 // --------------------------------------------------------------------------------------------------------------

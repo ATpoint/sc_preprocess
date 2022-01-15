@@ -36,6 +36,8 @@ include { AlevinQuantSF         }   from './modules/alevin_quant'               
 include { WriteMtx              }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
 
 include { WriteMtxSF            }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
+
+include { AlevinQC              }   from './modules/alevin_qc'                  addParams(  outdir:         params.qc_outdir)
                                                                                             
 
 
@@ -143,6 +145,16 @@ workflow WRITE_MTX_SF {
 
 }
 
+workflow ALEVIN_QC {
+
+    take:
+        quants
+
+        main:
+            AlevinQC(quants)
+
+}
+
 //------------------------------------------------------------------------
 
 // samplesheet channel:
@@ -186,6 +198,12 @@ workflow SC_PREPROCESS {
               INDEX_GENTROME.out.mtrna, INDEX_GENTROME.out.idx)
 
         WRITE_MTX(QUANT.out.quants, INDEX_GENTROME.out.ftrs, INDEX_GENTROME.out.g2t)
+
+        //ch_for_alevinqc = QUANT.out.quants.flatMap { y ->
+        //    y[1]
+        //}.collect()
+
+        ALEVIN_QC(QUANT.out.quants)
 
     }
 
