@@ -28,7 +28,7 @@ include { AlevinQuant           }   from './modules/alevin_quant'               
                                                                                             libtype:        params.quant_libtype,
                                                                                             additional:     params.quant_args)
 
-include { AlevinQuantSF         }   from './modules/alevin_quant'            addParams(  outdir:         params.quant_outdir,
+include { AlevinQuantSF         }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
                                                                                             libtype:        params.quant_libtype,  
                                                                                             suffix:         params.quant_sf_sfx,
                                                                                             additional:     params.quant_sf_args)
@@ -47,7 +47,7 @@ workflow VALIDATE {
         samplesheet
         
     main:        
-        ValidateSamplesheet(samplesheet) 
+        ValidateSamplesheet(samplesheet, baseDir, launchDir, projectDir)
 
     emit:
         samplesheet = ValidateSamplesheet.out.ssheet
@@ -157,6 +157,7 @@ workflow SC_PREPROCESS {
     if(params.samplesheet != ''){
 
         VALIDATE(ch_samplesheet_in)
+
         // channel with the validated samplesheet
         ch_samplesheet = VALIDATE.out.samplesheet.splitCsv(header: true)
 

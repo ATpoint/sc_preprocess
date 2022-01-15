@@ -11,13 +11,16 @@ process ValidateSamplesheet {
 
     input:
     path(samplesheet) 
+    val(basedir)
+    val(launchdir)
+    val(projectdir)
         
     output:
     path("samplesheet_validated.txt"), emit: ssheet
         
     script: 
     """
-    Rscript --vanilla $baseDir/bin/validate_samplesheet.R $samplesheet
+    Rscript --vanilla $baseDir/bin/validate_samplesheet.R $samplesheet $basedir $launchdir $projectdir
     """                
 
 }

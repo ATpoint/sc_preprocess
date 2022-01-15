@@ -7,11 +7,16 @@ list.error <- list()
 
 #/ parse arguments from command line:
 args=commandArgs(trailingOnly=TRUE)
-if (length(args) != 1) {
+if (length(args) != 4) {
   stop("[invalid params]", "\n",
-       "Usage: validate_samplesheet.R <samplesheet>")
+       "Usage: validate_samplesheet.R <samplesheet> <basedir> <launchdir> <projectdir>")
   
 }
+
+# The *dirs are the absolute paths of the nf variables $baseDir, $launchDir and $projectDir.
+# If the samplesheet contains any of these three as strings then this script will replace them
+# with the absolute path. This is currently necessary because the samplesheet content (R1/R2 paths)
+# is parsed as strings so nf variables such as $baseDir do not get expanded.
 
 #/ read sample sheet
 s <- suppressWarnings(read.delim(args[1], sep=",", header=TRUE))
@@ -104,6 +109,16 @@ if(length(list.error)>0){
 #/ ensure consistent naming in $4
 s$is_sf[s$is_sf %in% c("TRUE", "true", "yes")] <- "true"
 s$is_sf[s$is_sf %in% c("", "false", "no")] <- "false"
+
+#/ replace $baseDir, $launchDir or $projectDir with the respective paths:
+s[,2] <- gsub("\\$baseDir|\\$\\{baseDir\\}", as.character(args[2]), s[,2])
+s[,3] <- gsub("\\$baseDir|\\$\\{baseDir\\}", as.character(args[2]), s[,3])
+
+s[,2] <- gsub("\\$launchDir|\\$\\{launchDir\\}", as.character(args[3]), s[,2])
+s[,3] <- gsub("\\$launchDir|\\$\\{launchDir\\}", as.character(args[3]), s[,3])
+
+s[,2] <- gsub("\\$projectDir|\\$\\{baseDir\\}", as.character(args[4]), s[,2])
+s[,3] <- gsub("\\$projectDir|\\$\\{projectDir\\}", as.character(args[4]), s[,3])
 
 #/ write validated sheet:
 write.table(s, file="samplesheet_validated.txt", quote=FALSE, 
