@@ -202,4 +202,19 @@ workflow SC_PREPROCESS {
 
 }
 
-workflow { SC_PREPROCESS() }
+workflow { 
+    
+    SC_PREPROCESS() 
+    
+    def od = params.outdir
+    workflow.onComplete {
+        println "\u001B[32m"
+        println "Pipeline completed!"
+        println ""
+        println "Results are in:"
+        println od
+        println "\u001B[0m"
+        println ""
+    }
+
+}
