@@ -2,11 +2,11 @@ name: sc_preprocess
 channels:
   - conda-forge
   - bioconda
+  - r
   - defaults
 dependencies:
   - bioconductor-biostrings
   - bioconductor-bsgenome
-  - bioconductor-delayedarray
   - bioconductor-eisar
   - bioconductor-fishpond
   - bioconductor-genomicfeatures
