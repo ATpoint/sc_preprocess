@@ -5,6 +5,7 @@ channels:
   - r
   - defaults
 dependencies:
+  - bioconductor-alevinqc
   - bioconductor-biostrings
   - bioconductor-bsgenome
   - bioconductor-eisar

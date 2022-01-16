@@ -36,10 +36,40 @@ include { AlevinQuantSF         }   from './modules/alevin_quant'               
 include { WriteMtx              }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
 
 include { WriteMtxSF            }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
+
+include { AlevinQC              }   from './modules/alevin_qc'                  addParams(  outdir:         params.qc_outdir)
                                                                                             
-
-
 //------------------------------------------------------------------------      
+
+// Validate that fastq files in samplesheet exist as files on disk
+
+fastq_no_exist  = [:]
+
+new FileReader(params.samplesheet).eachLine(1) {line, number-> 
+
+    if(number>1){
+
+        s = line
+                .replaceAll('\\$baseDir|\\$\\{baseDir\\}', new String("${baseDir}/"))
+                .replaceAll('\\$launchDir|\\$\\{launchDir\\}', new String("${launchDir}/"))
+                .replaceAll('\\$projectDir|\\$\\{projectDir\\}', new String("${projectDir}/")).split(',')
+               
+        if(!new File(s[1]).exists()) fastq_no_exist.put(s[0], s[1])
+        if(!new File(s[2]).exists()) fastq_no_exist.put(s[0], s[2])
+                
+    }
+
+}
+
+if(fastq_no_exist.size() > 0){
+    println "\u001B[31m======================================================================"
+    println "[VALIDATION ERROR]"
+    println "The following fastq files in the samplesheet do not exist:"
+    println fastq_no_exist
+    println "======================================================================\u001B[0m"
+    System.exit(1)
+}
+
 
 workflow VALIDATE {
 
@@ -143,6 +173,16 @@ workflow WRITE_MTX_SF {
 
 }
 
+workflow ALEVIN_QC {
+
+    take:
+        quants
+
+        main:
+            AlevinQC(quants)
+
+}
+
 //------------------------------------------------------------------------
 
 // samplesheet channel:
@@ -186,6 +226,12 @@ workflow SC_PREPROCESS {
               INDEX_GENTROME.out.mtrna, INDEX_GENTROME.out.idx)
 
         WRITE_MTX(QUANT.out.quants, INDEX_GENTROME.out.ftrs, INDEX_GENTROME.out.g2t)
+
+        //ch_for_alevinqc = QUANT.out.quants.flatMap { y ->
+        //    y[1]
+        //}.collect()
+
+        ALEVIN_QC(QUANT.out.quants)
 
     }
 
