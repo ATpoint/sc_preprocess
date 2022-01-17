@@ -18,7 +18,7 @@ schema.publishmode    = [value: 'copy', type: 'string', mandatory: true, allowed
 schema.outdir         = [value: overall_outdir, type: 'string', mandatory: true]
 
 // samplesheet:
-schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/]
+schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/, mandatory: true]
 
 // related to indexing the gentrome
 schema.genome         = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/GRCm38.primary_assembly.genome.fa.gz',
