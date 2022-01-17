@@ -52,7 +52,7 @@ checkExistCol(gtf.gr, params$gene_id)
 if(!params$chrM %in% levels(seqnames(gtf.gr))) 
   stop("value of <chrM> is not a chromosome in the GTF!")
 
-if(params$rrna %in% unique(gtf.gr$gene_type)) 
+if(!params$rrna %in% unique(gtf.gr$gene_type)) 
   stop("value of <rrna> is not a gene type in the GTF!")
 
 #/ extract introns from GTF based on the given read length:
