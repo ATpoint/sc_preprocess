@@ -12,7 +12,6 @@ def Map schema = [:] // don't change this line
 overall_outdir        = "$launchDir/sc_preprocess_results/"
 
 // generic options:
-schema.version        = [value: 'v2.0dev', type: 'string', mandatory: true]
 schema.min_nf_version = [value: '21.10.6', type: 'string', mandatory: true, allowed: '']
 schema.publishmode    = [value: 'copy', type: 'string', mandatory: true, allowed:['symlink', 'rellink', 'link', 'copy', 'copyNoFollow', 'move']]
 schema.outdir         = [value: overall_outdir, type: 'string', mandatory: true]
