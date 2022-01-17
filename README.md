@@ -112,7 +112,7 @@ As mentioned above the pipeline is fully containerized via both Docker and Singu
 
 ### Output
 
-The pipeline will produce an output folder `sc_preprocess_results` that contains:
+The pipeline will produce an output folder `sc_preprocess_results` in the location from which the pipeline was launched that contains:
 
 - `alevinIdx`: folder with the expanded transcriptome index(`idx_gentrome`) and the feature barcode index (`idx_features`)
 - `alevinQuant`: folder with the alevin outputs (one folder per sample)
