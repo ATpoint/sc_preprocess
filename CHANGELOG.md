@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.0dev
+## v2.0
 - updated with nf_blank template
   - params validation with params listed in `schema.nf`
   - intro message with summary of all params upon startup of pipeline
