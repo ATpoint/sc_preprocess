@@ -100,7 +100,7 @@ See the [Alevin manual](https://salmon.readthedocs.io/en/latest/alevin.html) for
 
 ### Resources
 
-As we quantify against the expanded and genome-decoyed reference transcriptome the pipeline requires extensive memory. Currently, 50GB of RAM are required and at least 8 CPUs.
+As we quantify against the expanded and genome-decoyed reference transcriptome the pipeline requires quite some memory. Currently, 40GB of RAM are hardcoded as requirements.
 
 ### Schedulers
 
