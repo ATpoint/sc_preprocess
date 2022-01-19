@@ -31,7 +31,6 @@ def ValidateParams(){
     def schemafile = new File("$projectDir/schema.nf")
 
     // [VALIDATION] Check that schema.nf exists
-    println("")
     if(!schemafile.exists()){
         ErrorMessenger("The expected \$baseDir/schema.nf file does not exist!",
                        "=> File 'schema.nf' must be located in the same directory as the main.nf!")
@@ -136,12 +135,17 @@ def ValidateParams(){
         }                                  
 
         if(schema_type=="string"){
+
+            // hack, if param in schema was empty like [value:''] then groovy makes this a boolean so convert back to string here
+            if(schema_value instanceof Boolean) schema_value = ''
+
             if((schema_value !instanceof String) && (schema_value !instanceof GString)){
                 ErrorMessenger(value_type_match_error, "=> You provided: $schema_value")
                 schema_error += 1
                 return
-            }                 
+            }                            
         }
+
 
         if(schema_type=="logical"){
             if(schema_value !instanceof Boolean){
@@ -247,7 +251,7 @@ def ValidateParams(){
         def use_length = max_char - name.length()
         def spacer = ' '.multiply(use_length)
         def m = entry['value']
-        println "${name} ${spacer}:: ${m}" 
+        if(m!='') println "${name} ${spacer}:: ${m}" 
 
     }
     println "${DASHEDDOUBLE}"

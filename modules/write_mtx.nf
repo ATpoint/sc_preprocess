@@ -43,6 +43,7 @@ process WriteMtxSF {
 
     input:
     tuple val(basename), path(quant)
+    val(suffix)
 
     output:
     path("*.mtx.gz"), emit: mtx
@@ -51,7 +52,7 @@ process WriteMtxSF {
     
     script:
     """
-    Rscript --vanilla $baseDir/bin/mtx_sf.R \"${basename}\" ${quant}
+    Rscript --vanilla $baseDir/bin/mtx_sf.R \"${basename}\" ${quant} ${suffix}
     """ 
 
 }

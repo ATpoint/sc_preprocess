@@ -36,11 +36,11 @@ The typical CL on a HPC with Singularity and SLURM (see sections below) would be
 
 NXF_VER=21.10.6 \
     nextflow run main.nf -profile singularity,slurm \
+    --genome path/to/genome.fa.gz --gtf path/to/gtf.gz \
     --samplesheet path/to/samplesheet.csv --features_file /path/to/features_file.tsv \
     -bg > pipeline.log
 
 ```    
-
 ### FASTQ FILES
 
 The pipeline reads the fastq file pairs from a [samplesheet](https://github.com/ATpoint/sc_preprocess/blob/main/test/samplesheet.csv) which is a four-column CSV with a header.
@@ -75,6 +75,15 @@ sample2,$baseDir/test/sample2_1.fastq.gz,$baseDir/test/sample2_2.fastq.gz,false
 
 The quantification requires building an index against reference files. This requires two files, first a **reference genome fasta file** and second a **reference annotation in GTF format**. This is controlled by the options `--genome` and `--gtf`. The defaults are the mouse GENCODE references from version [M25](https://www.gencodegenes.org/mouse/release_M25.html). The user can provide either a download link here (Nextflow will then pull the files automatically) or provide paths to local files. We recommend to download these files manually though as we found the automated staging of files to be unreliable at times.<br>
 **Note** that when using non-GENCODE files the user should adjust the options `--gene_name`, `--gene_id` and `--gene_type` which are the names of the columns in the GTF storing these information and probably also `--chrM` (the name of chrM in that annotation) and `-rrna` which is the gene type containing the rRNA information. The chrM and rRNA information are used during the cell barcode whitelisting by Alevin. We currently by default pass the `--gencode` flag to the Alevin indexing process. If non-GENCODE references are used consider removing this by passing `--idx_args ''` to the Nextflow command line.
+
+Optionally, one can build the index and then exit by using the `--idx_only` flag.<br>
+Also, one could provide an existing index, e.g. the one build with `--idx_only`. This works via the following params:<br>
+- `--idx`: Path to the index folder with the Alevin index files. This is what is outputted in `sc_preprocess_results/alevinIndex/` as folder named `idx_gentrome`
+- `--tgmap`: the tx2gene map. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
+- `--rrna`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
+- `--mtrna`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
+- `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.features.tsv.gz`
+- `--gene2type`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
 
 ### Quantification
 
@@ -116,5 +125,6 @@ The pipeline will produce an output folder `sc_preprocess_results` in the locati
 
 - `alevinIdx`: folder with the expanded transcriptome index(`idx_gentrome`) and the feature barcode index (`idx_features`)
 - `alevinQuant`: folder with the alevin outputs (one folder per sample)
-- `mtx`: folder with the expression matrices as `mtx.gz` and the column and row annotations as `tsv.gz``
+- `mtx`: folder with the expression matrices as `mtx.gz` and the column and row annotations as `tsv.gz`. If feature barcode libraries were provided then these files will have a suffix after the basename, by default that is `_SF_`, e.g. `sample1_SF.mtx.gz`. The feature barcode libraries contain all detected/unfiltered cellular barcodes whereas the transcriptomic libraries are already filtered for proper/non-noisy/whitelisted barcodes. That means the user has to remove barcodes (=columns) from these libraries that have no match in the transcriptomic (spliced/unspliced) matrices.
+
 - `alevinQC`: folder with the alevinQC html reports

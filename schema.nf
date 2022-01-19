@@ -17,9 +17,10 @@ schema.publishmode    = [value: 'copy', type: 'string', mandatory: true, allowed
 schema.outdir         = [value: overall_outdir, type: 'string', mandatory: true]
 
 // samplesheet:
-schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/, mandatory: true]
+schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/]
 
 // related to indexing the gentrome
+schema.idx_only       = [value: false, type: 'logical']
 schema.genome         = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/GRCm38.primary_assembly.genome.fa.gz',
                          type: 'string', mandatory: true]
 schema.gtf            = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz',
@@ -33,16 +34,23 @@ schema.idx_outdir     = [value: "${overall_outdir}/alevinIndex/", type: 'string'
 schema.idx_name       = [value: 'idx_gentrome', type: 'string', mandatory: true]
 schema.idx_args       = [value: '--sparse --gencode', type: 'string']
 
+// related to providing an existing index:
+schema.idx               = [value: '', type: 'string']
+schema.tgmap             = [value: '', type: 'string']
+schema.rrnagenes         = [value: '', type: 'string']
+schema.mtrnagenes        = [value: '', type: 'string']
+schema.expanded_features = [value: '', type: 'string']
+schema.gene2type         = [value: '', type: 'string']
+
 // related to indexing the feature barcodes
-schema.features_file  = [value: 'i', type: 'string', mandatory: false]
-schema.features_name  = [value: 'idx_features', type: 'string', mandatory: false]
+schema.features_file  = [value: '', type: 'string', mandatory: false]
 
 // related to quantification of reads against gentrome or feature barcode library
-schema.quant_outdir   = [value: "${overall_outdir}/alevinQuant/", type: 'string']
-schema.quant_libtype  = [value: 'ISR', type: 'string']
-schema.quant_args     = [value: '--chromiumV3', type: 'string']
-schema.quant_sf_args  = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --keepCBFraction 1.0', type: 'string'] // chromiumV3 with totalSeqB (15nt in R2)
-schema.quant_sf_sfx   = [value: '_SF', type: 'string']
+schema.quant_outdir    = [value: "${overall_outdir}/alevinQuant/", type: 'string']
+schema.quant_libtype   = [value: 'ISR', type: 'string']
+schema.quant_args      = [value: '--chromiumV3', type: 'string']
+schema.quant_sf_args   = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --keepCBFraction 1.0', type: 'string'] // chromiumV3 with totalSeqB (15nt in R2)
+schema.quant_sf_suffix = [value: '_SF', type: 'string']
 
 // related to mtx
 schema.mtx_outdir     = [value: "${overall_outdir}/mtx/", type: 'string', mandatory: true]    
