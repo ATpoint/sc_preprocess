@@ -39,8 +39,11 @@ jobs:
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
 
-      - name: TEST-DOCKER
+      - name: TEST-DOCKER_ALL
         run: NXF_VER=21.10.6 nextflow run main.nf -profile docker,test
+
+      - name: TEST-DOCKER_IDX
+        run: NXF_VER=21.10.6 nextflow run main.nf -profile docker,test --idx_only
 
       - name: TEST-CONDA
         run: |
@@ -51,7 +54,7 @@ jobs:
 
       - uses: eWaterCycle/setup-singularity@v7
         with:
-          singularity-version: 3.8.3
+          singularity-version: 3.8.0
     
       - name: TEST-SINGULARITY
         run: NXF_VER=21.10.6 nextflow run main.nf -profile singularity,test  
