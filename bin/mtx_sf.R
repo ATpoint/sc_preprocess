@@ -38,11 +38,11 @@ invisible(writeMM(obj=assay(se), file=spl))
 system(command = paste("gzip", spl))
 
 #/ Save col- and rowdata and compress:
-file.colnames <- gzfile(paste0(params$basename, "sf_barcodes.tsv.gz"), "w")
+file.colnames <- gzfile(paste0(params$basename, "_sf_barcodes.tsv.gz"), "w")
 write.table(x=data.frame(barcodes=colnames(se)), file=file.colnames, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
 close(file.colnames)
 
-file.rowdata <- gzfile(paste0(params$basename, "sf_features.tsv.gz"), "w")
+file.rowdata <- gzfile(paste0(params$basename, "_sf_features.tsv.gz"), "w")
 write.table(x=data.frame(features=rownames(se)), file=file.rowdata,
             col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
 close(file.rowdata)
