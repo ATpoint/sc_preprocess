@@ -247,7 +247,7 @@ def ValidateParams(){
         def use_length = max_char - name.length()
         def spacer = ' '.multiply(use_length)
         def m = entry['value']
-        println "${name} ${spacer}:: ${m}" 
+        if(m!='') println "${name} ${spacer}:: ${m}" 
 
     }
     println "${DASHEDDOUBLE}"
