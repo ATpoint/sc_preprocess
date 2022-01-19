@@ -31,7 +31,6 @@ def ValidateParams(){
     def schemafile = new File("$projectDir/schema.nf")
 
     // [VALIDATION] Check that schema.nf exists
-    println("")
     if(!schemafile.exists()){
         ErrorMessenger("The expected \$baseDir/schema.nf file does not exist!",
                        "=> File 'schema.nf' must be located in the same directory as the main.nf!")
