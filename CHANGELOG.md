@@ -11,6 +11,7 @@
 - the custom container via `params.container` is now only used for the modules that require multiple Bioc packages simultaneously
 - added a CI test for singularity
 - added alevinQC module and an overall summary report of all samples based on its output
+- allow premade index
 ## v1.1.0
 - added multiqc
 - now use micromamba base image
