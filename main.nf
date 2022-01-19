@@ -120,14 +120,24 @@ if(!params.idx_only){
 // elements exist
 //------------------------------------------------------------------------
 
+ def ConvertBool2String(indata='') {
+    if(indata instanceof Boolean){
+        return ''
+    } else {
+        return indata
+    }
+ }
+
 if(params.idx != ''){
 
-        use_idx   = params.idx
-        use_tgmap = params.tgmap
-        use_rrna  = params.rrnagenes
-        use_mtrna = params.mtrnagenes
-        use_expanded_features = params.expanded_features
-        use_gene2type = params.gene2type
+        // little hack when the param is empty (which groovy then converts to boolean), convert to string
+        // so File() will not complain about Boolean rather than having String input
+        use_idx   = ConvertBool2String(params.idx)
+        use_tgmap = ConvertBool2String(params.tgmap)
+        use_rrna  = ConvertBool2String(params.rrnagenes)
+        use_mtrna = ConvertBool2String(params.mtrnagenes)
+        use_expanded_features = ConvertBool2String(params.expanded_features)
+        use_gene2type = ConvertBool2String(params.gene2type)
 
         // validate existance:
         def not_exist = [:]

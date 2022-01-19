@@ -135,12 +135,17 @@ def ValidateParams(){
         }                                  
 
         if(schema_type=="string"){
-            if((schema_value != '') && (schema_value !instanceof String) && (schema_value !instanceof GString)){
+
+            // hack, if param in schema was empty like [value:''] then groovy makes this a boolean so convert back to string here
+            if(schema_value instanceof Boolean) schema_value = ''
+
+            if((schema_value !instanceof String) && (schema_value !instanceof GString)){
                 ErrorMessenger(value_type_match_error, "=> You provided: $schema_value")
                 schema_error += 1
                 return
-            }                 
+            }                            
         }
+
 
         if(schema_type=="logical"){
             if(schema_value !instanceof Boolean){
