@@ -46,6 +46,8 @@ process WriteMtxSF {
 
     output:
     path("*.mtx.gz"), emit: mtx
+    path("*barcodes.tsv.gz"), emit: barcodes
+    path("*features.tsv.gz")
     
     script:
     """
