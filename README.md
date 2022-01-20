@@ -80,8 +80,8 @@ Optionally, one can build the index and then exit by using the `--idx_only` flag
 Also, one could provide an existing index, e.g. the one build with `--idx_only`. This works via the following params:<br>
 - `--idx`: Path to the index folder with the Alevin index files. This is what is outputted in `sc_preprocess_results/alevinIndex/` as folder named `idx_gentrome`
 - `--tgmap`: the tx2gene map. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
-- `--rrna`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
-- `--mtrna`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
+- `--rrnagenes`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
+- `--mtrnagenes`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
 - `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.features.tsv.gz`
 - `--gene2type`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
 
