@@ -49,7 +49,7 @@ schema.features_file  = [value: '', type: 'string', mandatory: false]
 schema.quant_outdir    = [value: "${overall_outdir}/alevinQuant/", type: 'string']
 schema.quant_libtype   = [value: 'ISR', type: 'string']
 schema.quant_args      = [value: '--chromiumV3', type: 'string']
-schema.quant_sf_args   = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --keepCBFraction 1.0', type: 'string'] // chromiumV3 with totalSeqB (15nt in R2)
+schema.quant_sf_args   = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25]', type: 'string'] // chromiumV3 with totalSeqB (15nt in R2)
 schema.quant_sf_suffix = [value: '_SF', type: 'string']
 
 // related to mtx
