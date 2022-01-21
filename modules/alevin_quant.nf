@@ -61,7 +61,7 @@ process AlevinQuantSF {
     script:
     """
     #/ parse whitelist:
-    gzip -dc $whitelist | grep -v '^barcodes$' > whitelist.txt
+    gzip -dc $whitelist | grep -v '^barcodes\$' > whitelist.txt
     
     salmon alevin --no-version-check \
         -i $idx --tgMap $tgmap \
