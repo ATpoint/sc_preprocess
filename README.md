@@ -83,7 +83,9 @@ Also, one could provide an existing index, e.g. the one build with `--idx_only`.
 - `--rrnagenes`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
 - `--mtrnagenes`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
 - `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.features.tsv.gz`
-- `--gene2type`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
+- `--gene2type`: file mappign each gene name to the type (e.g. protein_coding). This is what is outputted in `sc_preprocess_results/alevinIndex/` as  `annotation.gene2type.txt`
+
+It is recommended to build the index with the `--idx_only` flag first and then store it somewhere for re-use, with the above arguments when quantifying a dataset with this premade index.
 
 ### Quantification
 
