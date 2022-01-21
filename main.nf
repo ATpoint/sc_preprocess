@@ -236,9 +236,10 @@ workflow QUANT_SF {
         fastq  
         idx
         tgmap
+        whitelist
 
     main:
-        AlevinQuantSF(fastq, idx, tgmap)
+        AlevinQuantSF(fastq, idx, tgmap, whitelist)
 
     emit:
         quants = AlevinQuantSF.out.quants                
@@ -255,6 +256,9 @@ workflow WRITE_MTX {
 
     main:    
         WriteMtx(quants, features, gene2type) 
+
+    emit:
+        barcodes = WriteMtx.out.barcodes      
 
 }
 
@@ -329,7 +333,7 @@ workflow SC_PREPROCESS {
 
             INDEX_SF(params.features_file, "idx_features")
 
-            QUANT_SF(ch_input_quant_sf, INDEX_SF.out.idx, INDEX_SF.out.tgmap)
+            QUANT_SF(ch_input_quant_sf, INDEX_SF.out.idx, INDEX_SF.out.tgmap, WRITE_MTX.out.barcodes)
 
             WRITE_MTX_SF(QUANT_SF.out.quants, params.quant_sf_suffix)
             

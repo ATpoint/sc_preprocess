@@ -51,7 +51,8 @@ process AlevinQuantSF {
     input:
     tuple val(sample_id), path(R1), path(R2), val(notused)
     path(idx)                         
-    path(tgmap)      
+    path(tgmap)     
+    path(whitelist) 
 
     output:
     tuple val(sample_id), path("${sample_id}${params.suffix}"), emit: quants
@@ -59,12 +60,16 @@ process AlevinQuantSF {
     // as in https://combine-lab.github.io/alevin-tutorial/2020/alevin-features/
     script:
     """
+    #/ parse whitelist:
+    gzip -dc $whitelist | grep -v '^barcodes$' > whitelist.txt
+    
     salmon alevin --no-version-check \
         -i $idx --tgMap $tgmap \
         -o ${sample_id}${params.suffix} \
         --libType $params.libtype \
         -p $task.cpus \
         $params.additional \
+        --whitelist whitelist.txt \
         -1 ${R1} -2 ${R2}
     """
 
