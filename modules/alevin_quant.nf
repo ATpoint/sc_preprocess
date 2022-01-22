@@ -56,9 +56,7 @@ process AlevinQuantFB {
     
     // as in https://combine-lab.github.io/alevin-tutorial/2020/alevin-features/
     script:
-    """
-    #/ parse whitelist:
-    
+    """   
     salmon alevin --no-version-check \
         -i $idx --tgMap $tgmap \
         -o ${sample_id}${params.suffix} \
