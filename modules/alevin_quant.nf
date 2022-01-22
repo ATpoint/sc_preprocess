@@ -10,8 +10,6 @@ process AlevinQuant {
     if(workflow.profile.contains('docker')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
     if(workflow.profile.contains('singularity')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
 
-    
-
     input:
     tuple val(sample_id), path(R1), path(R2), val(type)
     path(idx)                         // 2
@@ -36,7 +34,7 @@ process AlevinQuant {
 
 }
 
-process AlevinQuantSF {
+process AlevinQuantFB {
 
     tag "$sample_id"
 
@@ -52,7 +50,6 @@ process AlevinQuantSF {
     tuple val(sample_id), path(R1), path(R2), val(notused)
     path(idx)                         
     path(tgmap)     
-    path(whitelist) 
 
     output:
     tuple val(sample_id), path("${sample_id}${params.suffix}"), emit: quants
@@ -61,7 +58,6 @@ process AlevinQuantSF {
     script:
     """
     #/ parse whitelist:
-    gzip -dc $whitelist | grep -v '^barcodes\$' > whitelist.txt
     
     salmon alevin --no-version-check \
         -i $idx --tgMap $tgmap \
@@ -69,7 +65,7 @@ process AlevinQuantSF {
         --libType $params.libtype \
         -p $task.cpus \
         $params.additional \
-        --whitelist whitelist.txt \
+        --dumpFeatures \
         -1 ${R1} -2 ${R2}
     """
 

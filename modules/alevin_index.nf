@@ -39,7 +39,7 @@ process AlevinIndex {
 
 }
 
-process AlevinIndexSF {
+process AlevinIndexFB {
 
     cpus 1
     memory 100.MB

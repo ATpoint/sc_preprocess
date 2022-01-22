@@ -14,13 +14,14 @@ process AlevinQC {
 
     input:
     tuple val(sample_id), path(alevin)
+    val(suffix)
 
     output:
     path("*.html")
     
     script:
     """
-    Rscript --vanilla $baseDir/bin/alevin_qc.R $sample_id $alevin
+    Rscript --vanilla $baseDir/bin/alevin_qc.R $sample_id $alevin $suffix
     """ 
 
 }

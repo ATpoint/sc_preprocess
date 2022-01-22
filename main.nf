@@ -12,14 +12,15 @@ String timePart = date.format("HH:mm:ss")
 def start_date = datePart + timePart
 
 println ""
-println "\u001B[33m======================================================================"
-println "Pipeline:  sc_preprocess"
-println "GitHub:    https://github.com/ATpoint/sc_preprocess"
-println "Author:    Alexander Toenges (@ATpoint)"
-println "Runname:   $workflow.runName"
-println "Profile:   $workflow.profile"
-println "Start:     $start_date"
-println "======================================================================\u001B[0m"
+println "\u001B[33m========================================================================================================================="
+println "Pipeline:      sc_preprocess"
+println "GitHub:        https://github.com/ATpoint/sc_preprocess"
+println "Documentation: https://github.com/ATpoint/sc_preprocess/README.md"
+println "Author:        Alexander Toenges (@ATpoint)"
+println "Runname:       $workflow.runName"
+println "Profile:       $workflow.profile"
+println "Start:         $start_date"
+println "=========================================================================================================================\u001B[0m"
 
 //------------------------------------------------------------------------
 // Validate input params via schema.nf
@@ -33,33 +34,54 @@ println "======================================================================\
 
 include { ValidateSamplesheet   }   from './modules/validate_samplesheet.nf'    addParams(  outdir: params.outdir)
 
+//------------------------------------------------------------------------
+
 include { ParseExonIntronTx     }   from './modules/parse_exon_intron_tx.nf'    addParams(  gene_name:      params.gene_name,
                                                                                             gene_id:        params.gene_id,
                                                                                             gene_type:      params.gene_type,
                                                                                             chrM:           params.chrM,
                                                                                             rrna:           params.rrna,
                                                                                             outdir:         params.idx_outdir)
+                                                                                            
+//------------------------------------------------------------------------                                                                                            
 
 include { AlevinIndex           }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir,
                                                                                             additional:     params.idx_args)
 
-include { AlevinIndexSF         }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir)
+//------------------------------------------------------------------------
 
+include { AlevinIndexFB         }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir)
 
+//------------------------------------------------------------------------
+
+// combine the read geometry and additional params into a single string
+use_quant_args = params.quant_args + ' ' + params.r1_type + ' ' + params.r2_type
+if(use_quant_args == ' ') use_quant_args = ''
 
 include { AlevinQuant           }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
-                                                                                            libtype:        params.quant_libtype,
-                                                                                            additional:     params.quant_args)
+                                                                                            libtype:        params.libtype,
+                                                                                            additional:     use_quant_args)
 
-include { AlevinQuantSF         }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
-                                                                                            libtype:        params.quant_libtype,  
-                                                                                            suffix:         params.quant_sf_suffix,
-                                                                                            additional:     params.quant_sf_args)
+//------------------------------------------------------------------------
+
+// combine the read geometry and additional params into a single string
+use_quant_args_sf = params.quant_args + ' ' + params.r1_type + ' ' + params.r2_type_fb
+if(use_quant_args_sf == ' ') use_quant_args_sf = ''
+
+include { AlevinQuantFB         }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
+                                                                                            libtype:        params.libtype,  
+                                                                                            suffix:         params.fb_suffix,
+                                                                                            additional:     use_quant_args_sf)
+
+//------------------------------------------------------------------------                                                                                            
 
 include { WriteMtx              }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
 
-include { WriteMtxSF            }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir,
-                                                                                            suffix:         params.quant_sf_suffix)
+//------------------------------------------------------------------------  
+
+include { WriteNcells           }   from './modules/summary_cells'              addParams(  outdir:         params.qc_outdir)
+
+//------------------------------------------------------------------------  
 
 include { AlevinQC              }   from './modules/alevin_qc'                  addParams(  outdir:         params.qc_outdir)
                                                                                             
@@ -74,10 +96,10 @@ if(!params.idx_only){
     fastq_no_exist  = [:]
     
     if(!(new File(params.samplesheet)).exists()){
-        println "\u001B[31m======================================================================"
+        println "\u001B[31m========================================================================================================================="
         println "[VALIDATION ERROR]"
         println "The samplesheet does not exist!"
-        println "======================================================================\u001B[0m"
+        println "=========================================================================================================================\u001B[0m"
         System.exit(1)
     }
 
@@ -100,11 +122,11 @@ if(!params.idx_only){
     }
 
     if(fastq_no_exist.size() > 0){
-        println "\u001B[31m======================================================================"
+        println "\u001B[31m========================================================================================================================="
         println "[VALIDATION ERROR]"
         println "The following fastq files in the samplesheet do not exist:"
         println fastq_no_exist
-        println "======================================================================\u001B[0m"
+        println "=========================================================================================================================\u001B[0m"
         System.exit(1)
     }
 
@@ -145,10 +167,10 @@ if(params.idx != ''){
         not_exist.each { mm, nn -> 
         
             def nmm = mm.replaceAll("use_", "--")
-            println "\u001B[31m======================================================================"
+            println "\u001B[31m========================================================================================================================="
             println "[VALIDATION ERROR]"
             println "${nmm} does not exist!"
-            println "======================================================================\u001B[0m"
+            println "=========================================================================================================================\u001B[0m"
             
         }
 
@@ -196,18 +218,18 @@ workflow INDEX_GENTROME {
 }
 
 // Indexing of feature barcodes
-workflow INDEX_SF {
+workflow INDEX_FB {
 
     take:
-        sf_file
+        fb_file
         idxname
 
     main:
-        AlevinIndexSF(sf_file, idxname)
+        AlevinIndexFB(fb_file, idxname)
 
     emit: 
-        idx    = AlevinIndexSF.out.idx
-        tgmap  = AlevinIndexSF.out.tgmap
+        idx    = AlevinIndexFB.out.idx
+        tgmap  = AlevinIndexFB.out.tgmap
 
 }
 
@@ -219,10 +241,10 @@ workflow QUANT {
         tgmap  
         rrnagenes
         mtgenes
-        idx_gentrome
+        idx
 
     main:
-        AlevinQuant(fastq, idx_gentrome, tgmap, rrnagenes, mtgenes)
+        AlevinQuant(fastq, idx, tgmap, rrnagenes, mtgenes)
 
     emit:
         quants = AlevinQuant.out.quants     
@@ -230,19 +252,18 @@ workflow QUANT {
 }
 
 // Quant against feature barcodes
-workflow QUANT_SF {
+workflow QUANT_FB {
 
     take: 
         fastq  
         idx
         tgmap
-        whitelist
 
     main:
-        AlevinQuantSF(fastq, idx, tgmap, whitelist)
+        AlevinQuantFB(fastq, idx, tgmap)
 
     emit:
-        quants = AlevinQuantSF.out.quants                
+        quants = AlevinQuantFB.out.quants                
 
 }
 
@@ -253,25 +274,27 @@ workflow WRITE_MTX {
         quants
         features
         gene2type
+        samplesheet
 
     main:    
-        WriteMtx(quants, features, gene2type) 
+        WriteMtx(quants, features, gene2type, samplesheet) 
 
     emit:
+        mtx      = WriteMtx.out.mtx
         barcodes = WriteMtx.out.barcodes      
+        features = WriteMtx.out.features
+        ncells   = WriteMtx.out.ncells
 
 }
 
-// Write feature barcode counts as mtx
-workflow WRITE_MTX_SF {
-
+workflow SUMMARY {
+    
     take:
-        quants
-        suffix
+        dirs
 
-    main:    
-        WriteMtxSF(quants, suffix) 
-
+    main:
+        WriteNcells(dirs)
+            
 }
 
 // Basic QC using alevinQC (Bioc)
@@ -281,7 +304,17 @@ workflow ALEVIN_QC {
         quants
 
         main:
-            AlevinQC(quants)
+            AlevinQC(quants, 'empty')
+
+}
+
+workflow ALEVIN_QC_FB {
+
+    take:
+        quants
+
+        main:
+            AlevinQC(quants, params.fb_suffix)
 
 }
 
@@ -309,35 +342,61 @@ workflow SC_PREPROCESS {
 
         // channel with the transcriptomic fastq pairs:
         ch_input_quant = ch_samplesheet.map { k -> 
-            if(k['is_sf']=='false') {
-                tuple(k['sample_id'], k['R1'], k['R2'], k['is_sf'])
+            if(k['is_fb']=='false') {
+                tuple(k['sample_id'], k['R1'], k['R2'], k['is_fb'])
             } else null
         }.groupTuple(by: 0)
 
         // channel with the feature barcode fastq pairs:
-        ch_input_quant_sf = ch_samplesheet.map { k -> 
-            if(k['is_sf']=="true") {
-                tuple(k['sample_id'], k['R1'], k['R2'], k['is_sf'])
+        ch_input_quant_fb = ch_samplesheet.map { k -> 
+            if(k['is_fb']=="true") {
+                tuple(k['sample_id'], k['R1'], k['R2'], k['is_fb'])
             } else null
         }.groupTuple(by: 0)
 
         // Index gentrome and then quantify against it:
         QUANT(ch_input_quant, tgmap, rrna, mtrna, idx)
 
-        WRITE_MTX(QUANT.out.quants, ftrs, gene2type)
-
         ALEVIN_QC(QUANT.out.quants)
 
         // Index SFs and then quantify against it:
         if(params.features_file!=''){
 
-            INDEX_SF(params.features_file, "idx_features")
+            INDEX_FB(params.features_file, "idx_features")
 
-            QUANT_SF(ch_input_quant_sf, INDEX_SF.out.idx, INDEX_SF.out.tgmap, WRITE_MTX.out.barcodes)
+            QUANT_FB(ch_input_quant_fb, INDEX_FB.out.idx, INDEX_FB.out.tgmap)
 
-            WRITE_MTX_SF(QUANT_SF.out.quants, params.quant_sf_suffix)
+            ALEVIN_QC_FB(QUANT_FB.out.quants)
             
         }
+
+        /* 
+         * Split alevin quantifications into spliced/unspliced.
+         * optionally match these with the feature barcode libraries and retain only those CBs present in both RNA and FBs,
+         * optionally perform barcode translation,
+         * and save as mtx.gz and the barcodes/features as tsv.gz
+         * For this combine the RNA and FB alevin quants into a single tuple
+         */
+
+        // translation table, only used if translate_barcodes is true
+        if(params.translate_barcodes==true){
+                ch_translate = Channel.fromPath(params.translate_list, checkIfExists: true)
+        } else ch_translate = Channel.fromPath("/")
+
+        // combine RNA and FB alevins into a tuple:
+        if(params.features_file==''){
+            ch_quants = QUANT.out.quants.map { qm -> tuple(qm[0], qm[1], "/")}
+        } else {
+            ch_quants = QUANT.out.quants.join(QUANT_FB.out.quants, remainder: true).map { boom ->
+                if(boom[2]==null) {
+                    return tuple(boom[0], boom[1], "/")
+                } else return boom
+            }
+        }
+
+        WRITE_MTX(ch_quants, ftrs, gene2type, ch_translate.collect())
+        WRITE_MTX.out.ncells.collect().view()
+        SUMMARY(WRITE_MTX.out.ncells.collect())
 
 }
 
@@ -365,7 +424,7 @@ workflow {
 
         SC_PREPROCESS(params.samplesheet, use_idx, use_tgmap, use_rrna, use_mtrna, use_gene2type, use_expanded_features) 
 
-    }
+    } 
 
     // Final message printing the output directory:
     def od = params.outdir
@@ -375,12 +434,14 @@ workflow {
         String timePart2 = date2.format("HH:mm:ss")
         def end_date = datePart2 + timePart2
         println ""
-        println "\u001B[33m======================================================================"
+        println "\u001B[33m========================================================================================================================="
         println "Pipeline completed!"
         println "End: $end_date"
         println "Results are in:"
         println od
-        println "======================================================================\u001B[0m"
+        //println "A summary file with cellnumbers per sample is at:"
+        //println "$smyfile"
+        println "=========================================================================================================================\u001B[0m"
         println ""
     }
 
