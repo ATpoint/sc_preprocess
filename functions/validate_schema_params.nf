@@ -13,7 +13,7 @@ ANSI_RESET   = "\u001B[0m"
 ANSI_RED     = "\u001B[31m"
 ANSI_GREEN   = "\u001B[32m"
 ANSI_YELLOW  = "\u001B[33m"
-DASHEDDOUBLE = "=".multiply(70)
+DASHEDDOUBLE = "=".multiply(121)
     
 // Function for printing consistent error messages:
 def ErrorMessenger(base_message='', additional_message=''){

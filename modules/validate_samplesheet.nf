@@ -2,6 +2,7 @@ process ValidateSamplesheet {
 
     cpus 1
     memory 100.MB
+    time '5m'
 
     publishDir params.outdir, mode: params.publishmode
 

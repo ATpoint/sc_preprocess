@@ -1,8 +1,10 @@
 #! /usr/bin/env nextflow
 
-/* 
-        SCHEMA DEFINITION FOR PARAMS VALIDATION FOR SCPREPROCESS
-*/
+/*
+ *
+ *  SCHEMA DEFINITION FOR PARAMS VALIDATION
+ *
+ */
 
 def Map schema = [:] // don't change this line
 
@@ -46,20 +48,26 @@ schema.gene2type         = [value: '', type: 'string']
 schema.features_file  = [value: '', type: 'string', mandatory: false]
 
 // related to quantification of reads against gentrome or feature barcode library
-schema.quant_outdir    = [value: "${overall_outdir}/alevinQuant/", type: 'string']
-schema.quant_libtype   = [value: 'ISR', type: 'string']
-schema.quant_args      = [value: '--chromiumV3', type: 'string']
-schema.quant_sf_args   = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --keepCBFraction 1.0', type: 'string'] // chromiumV3 with totalSeqB (15nt in R2)
-schema.quant_sf_suffix = [value: '_SF', type: 'string']
+schema.r1_type            = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28]', type: 'string', mandatory: true]
+schema.r2_type            = [value: '--read-geometry 2[1-91]', type: 'string', mandatory: true]
+schema.r2_type_fb         = [value: '--read-geometry 2[11-25]', type: 'string', mandatory: true]
+schema.quant_outdir       = [value: "${overall_outdir}/alevinQuant/", type: 'string']
+schema.libtype            = [value: 'ISR', type: 'string']
+schema.quant_args         = [value: '', type: 'string']
+schema.quant_args_fb      = [value: '', type: 'string']
+schema.fb_suffix          = [value: '_fb', type: 'string']
+schema.translate_barcodes = [value: true, type: 'logical', mandatory: true]
+schema.translate_list     = [value: "$baseDir/assets/3M-february-2018.txt.gz", type: 'string', mandatory: true]
 
 // related to mtx
-schema.mtx_outdir     = [value: "${overall_outdir}/mtx/", type: 'string', mandatory: true]    
+schema.mtx_outdir     = [value: "${overall_outdir}/mtx/", type: 'string', mandatory: true]
+schema.rna_suffix     = [value: '_rna', type: 'string']
 
 // related to alevinQC:
 schema.qc_outdir      = [value: "${overall_outdir}/alevinQC/", type: 'string', mandatory: true]
 
 // related to the container/environment for the R/Bioconductor part of this workflow
-schema.container      = [value:'atpoint/sc_preprocess:v1.4.0', type:'string', mandatory:true]
+schema.container      = [value:'atpoint/sc_preprocess:v1.5.0', type:'string', mandatory:true]
 schema.environment    = [value: "$baseDir/environment.yml", type:'string', mandatory: true ]
 
 // --------------------------------------------------------------------------------------------------------------
