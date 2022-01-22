@@ -79,6 +79,7 @@ Running with a premade index would require:<br>
 - `--gene2type`: a map connecting gene_name/id to gene_type. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
 
 Finally, there is `--idx_args` which allows to pass further arguments to `salmon index`. See `salmon index -h` or check the salmon docs for available arguments. By default we pass `--gencode --sparse` telling salmon that we use GENCODE-formatted files and to build a sparse index. The latter saves some memory but makes analysis slightly slower. Use `--idx_args ''` to remove these arguments or pass custom ones. Usually there is no need to modify the defaults.
+
 ### Samplesheet
 
 The pipeline reads the fastq file pairs from a [samplesheet](https://github.com/ATpoint/sc_preprocess/blob/main/test/samplesheet.csv) which is a four-column CSV with a header.
@@ -124,7 +125,6 @@ hto_3	CTTGCCGCATGTCAT
 ```
 
 As mentioned above, the pipeline by default assumes 10x Chromium V3 libraries with totalSeqB/C feature barcodes which require barcode translation (see point 5 of "Details"). If using any other feature barcoding type then this should be turned off by providing the `--translate_barcode false` flag to the Nextflow command line.
-
 ### Read processing
 
 The read processing (=quantification, CB detection, UMI deduplication) process requires a couple of flags. The defaults assume 10x Chromium V3 libraries with CBs/UMIs in read1 and cDNA/features barcodes in read2. <br>
