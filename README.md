@@ -12,13 +12,13 @@
 
 ## Introduction
 
-**sc_preprocess** is an automated preprocessing pipeline for 10X scRNA-seq data implemented using [Nextflow](https://www.nextflow.io/) which is fully containerized to take care of all required software and ensure reproducibility. It supports feature barcode experiments such as CITE-Seq and cell hashing (HTO). The workhorse of this pipeline is the quantification software [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) from [Rob Patro's lab](https://combine-lab.github.io/) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). See also the publications for [salmon](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5600148/) and [alevin](https://pubmed.ncbi.nlm.nih.gov/30917859/) in Nature Methods and Genome Biology.
+**sc_preprocess** is an automated preprocessing pipeline for 10x scRNA-seq data implemented using [Nextflow](https://www.nextflow.io/) which is fully containerized to take care of all required software and ensure reproducibility. It optionally supports feature barcode experiments such as CITE-Seq and cell hashing (HTO). The workhorse of this pipeline is the quantification software [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) from [Rob Patro's lab](https://combine-lab.github.io/) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). See also the publications for [salmon](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5600148/) and [alevin](https://pubmed.ncbi.nlm.nih.gov/30917859/) in Nature Methods and Genome Biology.
 
 ## Details
 
 When running with default parameters the following steps will be executed:
 
-1. Generate an expanded reference transcriptome containing all spliced (=exonic) and unspliced (intronic) transcript sequences. This expanded transcriptome is required for quantification to allow output of both **spliced- and unspliced counts**, e.g. for [velocity](https://www.embopress.org/doi/full/10.15252/msb.202110282) analysis. Also, this expanded reference is decoyed by the entire reference genome to perform [selective alignments](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02151-8) in order to improve mapping accuracy by capturing reads that better align to the genome than the transcriptome, removing potential gDNA contaminations and other spurious mapppings. The indexing of this expanded reference is done by `salmon`.
+1. Generate an expanded reference transcriptome containing all spliced (=exonic) and unspliced (intronic) transcript sequences. This expanded transcriptome is required for quantification to allow output of both **spliced- and unspliced counts**, e.g. for [velocity](https://www.embopress.org/doi/full/10.15252/msb.202110282) analysis. Also, this expanded reference is decoyed by the entire reference genome to perform [selective alignments](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02151-8) in order to improve mapping accuracy by capturing reads that better align to the genome than the transcriptome, removing potential gDNA contaminations and other spurious mappings. The indexing of this expanded reference is done by `salmon`.
 
 2. Processing of the reads (fastq files) against the expanded reference using `alevin` performing cellular barcode (CB) detection, read mapping, Unique Molecular Identifier (UMI) deduplication and gene count estimation, resulting in per-cell gene-level abundance estimations.
 
@@ -26,9 +26,7 @@ When running with default parameters the following steps will be executed:
 
 4. Create a per-sample summary report using [alevinQC](https://csoneson.github.io/alevinQC/articles/alevinqc.html) which includes relevant QC metrics such as the average number of reads per cell, number of detected genes per cell [and others](https://bioconductor.org/packages/3.15/bioc/vignettes/alevinQC/inst/doc/alevinqc.html#generate-individual-plots).
 
-5. Optionally, quantify matched reads from a [feature barcoding](https://www.biolegend.com/en-us/blog/cite-seq-and-totalseq-reagents) experiment such as [CITE-seq](https://cite-seq.com/) or [HTO cell hashing](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-018-1603-1) against a provided set of reference barcode sequences. The obtained counts are filtered for the cellular barcodes detected in the RNA quantification. In feature barcode mode the pipeline will eventually return a count matrix that only contains those cellular barcodes detected in both the RNA and feature barcode experiment. <br>
-By default the pipeline performs [barcode translation](https://kb.10xgenomics.com/hc/en-us/articles/360031133451-Why-is-there-a-discrepancy-in-the-3M-february-2018-txt-barcode-whitelist-) as the cellular barcodes for RNA and feature barcodes on the same 10x gel bead are slightly different. We set this as default as in our lab this is the most common experiment. It makes sense when using TotalSeqB or TotalSeqC feature barcodes hashing. The translation list is taken from CellRanger the [CellRanger GitHub](https://github.com/10XGenomics/cellranger/raw/master/lib/python/cellranger/barcodes/translation/3M-february-2018.txt.gz), see also this thread at [biostars.org](https://www.biostars.org/p/9506747/). In any case, the feature barcode quantifications are written as `mtx.gz` in the same order as the cells detected in the RNA experiment. <br>
-It can be turned off with `--translate_barcodes false`, in this case no translation happens and the pipeline assumes that the cellular barcodes between the RNA and feature barcode experiments are the same.
+5. Optionally, quantify matched reads from a [feature barcoding](https://www.biolegend.com/en-us/blog/cite-seq-and-totalseq-reagents) experiment such as [CITE-seq](https://cite-seq.com/) or [HTO cell hashing](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-018-1603-1) against a provided set of reference barcode sequences. The obtained counts are filtered for the cellular barcodes detected in the RNA quantification. In feature barcode mode the pipeline will eventually return a count matrix that only contains those cellular barcodes detected in both the RNA and feature barcode experiment. By default the pipeline performs [barcode translation](https://kb.10xgenomics.com/hc/en-us/articles/360031133451-Why-is-there-a-discrepancy-in-the-3M-february-2018-txt-barcode-whitelist-) assuming totalSeqB/C HTOs which can be turned off, see below. We set this as default as in our lab this is the most common type of feature barcoding experiment. The translation tabke is taken from CellRanger the [CellRanger GitHub](https://github.com/10XGenomics/cellranger/raw/master/lib/python/cellranger/barcodes/translation/3M-february-2018.txt.gz), see also this thread at [biostars.org](https://www.biostars.org/p/9506747/). It can be turned off with `--translate_barcodes false`, in this case no translation happens and the pipeline assumes that the cellular barcodes between the RNA and feature barcode experiments are the same.
 
 ## Usage
 
@@ -45,6 +43,19 @@ NXF_VER=21.10.6 \
 
 ```    
 
+For a feature barcoding experiment one would use:
+
+```bash
+
+NXF_VER=21.10.6 \
+    nextflow run main.nf -profile singularity,slurm \
+    --genome path/to/genome.fa.gz \
+    --gtf path/to/gtf.gz \
+    --samplesheet path/to/samplesheet.csv \
+    --features_file path/to/feature_barcode_file.txt \
+    -with-trace -with-report report.html -bg > report.log
+
+```
 For details on the individual steps and the input samplesheet see below. The default output folder for all results is called `sc_preprocess_results` generated in the location from which the pipeline was launched.
 
 ### Indexing
@@ -102,6 +113,18 @@ If fastq files are present in multiple directories and the user still wants a si
 
 The pipeline will validate the integrity of the samplesheet and detect if a fastq files was provided in the sheet more than once or if the fastq does not exist. If validation fails the pipeline exists with an error and a message that helps debugging the problem. 
 
+### Feature Barcode Files
+
+If feature barcode experiments are to be quantified then the user must provide a `--features_file` which is a tab-separated list that in column1 stores the name of the feature barcode and in column2 the sequence, e.g.:
+
+```bash
+hto_1	ACCCACCAGTAAGAC
+hto_2	GGTCGAGAGCATTCA
+hto_3	CTTGCCGCATGTCAT
+```
+
+As mentioned above, the pipeline by default assumes 10x Chromium V3 libraries with totalSeqB/C feature barcodes which require barcode translation (see point 5 of "Details"). If using any other feature barcoding type then this should be turned off by providing the `--translate_barcode false` flag to the Nextflow command line.
+
 ### Read processing
 
 The read processing (=quantification, CB detection, UMI deduplication) process requires a couple of flags. The defaults assume 10x Chromium V3 libraries with CBs/UMIs in read1 and cDNA/features barcodes in read2. <br>
@@ -116,17 +139,6 @@ The read processing (=quantification, CB detection, UMI deduplication) process r
 - `--quants_args`: this flag allows to pass further arguments to the `alevin` processing. This can be any of the allowed `alevin` arguments (see its manual) such as generating inferential replicates. Is must **not** include any of `-o -i -p` as these options are already defined internally. See the [Alevin manual](https://salmon.readthedocs.io/en/latest/alevin.html#using-alevin) or the help via `salmon alevin -h` for details on further options.
 
 As said above, the default assume 10x Chromium V3. If using feature barcodes the defaults go with totalSeqB/C sequences.
-### Feature Barcode Files
-
-If feature barcode experiments are to be quantified then the user must provide a `--features_file` which is a tab-separated list that in column1 stores the name of the feature barcode and in column2 the sequence, e.g.:
-
-```bash
-hto_1	ACCCACCAGTAAGAC
-hto_2	GGTCGAGAGCATTCA
-hto_3	CTTGCCGCATGTCAT
-```
-
-As mentioned above, the pipeline by default assumes 10x Chromium V3 libraries with totalSeqB/C feature barcodes which require barcode translation (see point 5 of "Details"). If using any other feature barcoding type then this should be turned off by providing the `--translate_barcode false` flag to the Nextflow command line.
 
 ### Resources
 
