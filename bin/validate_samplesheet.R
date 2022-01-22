@@ -29,10 +29,10 @@ if(ncol(s)<4) {
 s<-s[,1:4]
 
 #/ validate colnames
-if(!all(c("sample_id", "R1", "R2", "is_sf") %in% colnames(s))){
+if(!all(c("sample_id", "R1", "R2", "is_fb") %in% colnames(s))){
   list.error$namerror <- 
     paste("[SAMPLESHEET ERROR]",
-          "samplesheet must have column names <sample_id> <R1> <R2> <is_sf>",
+          "samplesheet must have column names <sample_id> <R1> <R2> <is_fb>",
           sep="\n")
 }
 
@@ -65,9 +65,9 @@ check_matched <- lapply(unique(s$sample_id), function(x){
   
   r <- NULL
   sx <- s[s$sample_id==x,]
-  sx_name <- sx[sx$is_sf=="true",]$sample_id
+  sx_name <- sx[sx$is_fb=="true",]$sample_id
   if(length(sx_name)!=0){
-    if(!"false" %in% sx[sx$sample_id==sx_name,]$is_sf) r <- sx_name
+    if(!"false" %in% sx[sx$sample_id==sx_name,]$is_fb) r <- sx_name
   }
   return(r)
 })
@@ -107,8 +107,8 @@ if(length(list.error)>0){
 }
   
 #/ ensure consistent naming in $4
-s$is_sf[s$is_sf %in% c("TRUE", "true", "yes")] <- "true"
-s$is_sf[s$is_sf %in% c("", "false", "no")] <- "false"
+s$is_fb[s$is_fb %in% c("TRUE", "true", "yes")] <- "true"
+s$is_fb[s$is_fb %in% c("", "false", "no")] <- "false"
 
 #/ replace $baseDir, $launchDir or $projectDir with the respective paths:
 s[,2] <- gsub("\\$baseDir|\\$\\{baseDir\\}", as.character(args[2]), s[,2])
