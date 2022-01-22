@@ -15,4 +15,7 @@ dependencies:
   - bioconductor-summarizedexperiment
   - bioconductor-tximeta
   - r-base>=4.0
+  - r-ggplot2
   - r-optparse
+  - r-reshape2
+  

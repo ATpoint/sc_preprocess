@@ -2,8 +2,10 @@
 
 Build container with `docker build -t user/reponame:tag .` given the Dockerfile is in the current directory. Then, given the repository was created at DockerHub, push it to the Hub via `docker push user/reponame:tag`. This can either be done from local machine or directly via GitPod. In the future we might add a GitHub Actions to automate that upon pushes to the `environment.yml`.
 
+## v1.6.0
+- added reshape2 and ggplot2
 ## v1.5.0
-- add r-optparse
+- added optparse
 ## v1.4.0
 - add alevinQC
 ## v.1.3.2
