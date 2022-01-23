@@ -1,4 +1,10 @@
 # Changelog
+
+## v2.2
+- added error strategy to each module, now submitted processes will finish if any process fails rather than killing the entire pipeline
+- added `--keepCBFraction 1.0` flag to the FB quantification process
+- the summary table/plot towards cell numbers in the `alevinQC` dir now only lists cells per RNA experiment and intersect with the FB experiment
+- fixed minor bug related to barcode translation in the `mtx.R` script that happened when `alevin` identified CBs not listed in the translation list
 ## v2.1
 - extended documentation in `README.md`
 - now output one QC report for RNA and feature barcode (FB) experiments
