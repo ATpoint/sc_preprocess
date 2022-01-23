@@ -10,18 +10,17 @@ f <-
 
 #/ summary table:
 d <- do.call(rbind, f)
-colnames(d) <- c("sample", "ncells_rna", "ncells_fb", "ncells_intersect")
+colnames(d) <- c("sample", "ncells_rna", "ncells_intersect")
 
 #/ plot
 library(ggplot2)
 library(reshape2)
 r <- reshape2::melt(d, id.vars="sample")
 r$variable <- gsub("ncells_intersect", "Intersect (RNA -- Feature Barcodes)",
-                   gsub("ncells_fb", "Feature Barcode Experiment",
-                      gsub("ncells_rna", "RNA experiment", r$variable)))
+                      gsub("ncells_rna", "RNA experiment", r$variable))
 r$variable <- factor(r$variable, levels=unique(r$variable))
 
-if(all(is.na(r[r$variable=="Feature Barcode Experiment",]$value))){
+if(all(is.na(r[r$variable=="Intersect (RNA -- Feature Barcodes)",]$value))){
   r <- r[r$variable=="RNA experiment",]
   r$variable <- droplevels(r$variable)
 }
@@ -37,7 +36,7 @@ gg <-
     theme(legend.title=element_blank(), legend.position="top", legend.justification="left",
           axis.ticks.x=element_blank(), axis.text.x=element_blank()) +
     scale_fill_manual(values=cols) +
-    guides(fill=guide_legend(nrow=3), x=guide_axis(angle=45)) +
+    guides(fill=guide_legend(nrow=2), x=guide_axis(angle=45)) +
     facet_wrap(~sample, ncol=4, scales="free_x")
 
 if(length(cols)==1) gg <- gg + theme(legend.position="none")

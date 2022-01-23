@@ -100,7 +100,7 @@ if(!is.null(opts$alevin_fb)){
     warning(paste("No overlap between RNA and feature barcode experiment for sample:", opts$sampleid)) 
   }
   
-  ncells=data.frame(rna=ncol(se_rna), fb=ncol(se_fb), overlap=length(intersected))
+  ncells=data.frame(rna=ncol(se_rna), overlap_fb=length(intersected))
   se_fb  <- se_fb[,intersected]
   se_rna <- se_rna[,intersected]
   
@@ -124,7 +124,7 @@ if(!is.null(opts$alevin_fb)){
   assay_unspliced <- assay(se_rna, "unspliced")
   barcodes        <- data.frame(barcodes=colnames(se_rna))
   features        <- data.frame(rowData(se_rna))
-  ncells=data.frame(rna=ncol(se_rna), fb=NA, overlap=NA)
+  ncells=data.frame(rna=ncol(se_rna), overlap=NA)
   
 }
 
