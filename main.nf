@@ -395,7 +395,7 @@ workflow SC_PREPROCESS {
         }
 
         WRITE_MTX(ch_quants, ftrs, gene2type, ch_translate.collect())
-        WRITE_MTX.out.ncells.collect().view()
+        
         SUMMARY(WRITE_MTX.out.ncells.collect())
 
 }
