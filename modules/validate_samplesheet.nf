@@ -1,7 +1,7 @@
 process ValidateSamplesheet {
 
     cpus 1
-    memory 100.MB
+    memory 2.GB
     time '5m'
 
     errorStrategy 'finish'

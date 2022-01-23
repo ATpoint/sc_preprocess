@@ -1,8 +1,7 @@
 process WriteNcells {
 
     cpus 1
-    memory 100.MB
-    time '5min'
+    memory 2.GB
 
     errorStrategy 'finish'
 
