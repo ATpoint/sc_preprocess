@@ -87,6 +87,8 @@ if(!is.null(opts$alevin_fb)){
     map <- read.table(opts$translate_table, sep="\t", header=FALSE) # read translation table
     fb2rna <- map$V1                                # the sequences are rna
     names(fb2rna) <- map$V2                         # the names are fb
+    subset_colnames <- colnames(se_fb)[colnames(se_fb) %in% names(fb2rna)] 
+    se_fb <- se_fb[,subset_colnames]                # subset to colnames that are in the 3M list
     colnames(se_fb) <- fb2rna[colnames(se_fb)]      # if fb names are matched return rna CBs
     rm(map, fb2rna); invisible(gc(verbose=FALSE))
     
@@ -96,12 +98,12 @@ if(!is.null(opts$alevin_fb)){
   intersected <- intersect(colnames(se_fb), colnames(se_rna))
   if(length(intersected)==0) {
     warning(paste("No overlap between RNA and feature barcode experiment for sample:", opts$sampleid)) 
-    
-  } else {
-    ncells=data.frame(rna=ncol(se_rna), fb=ncol(se_fb), overlap=length(intersected))
-    se_fb  <- se_fb[,intersected]
-    se_rna <- se_rna[,intersected]
   }
+  
+  ncells=data.frame(rna=ncol(se_rna), fb=ncol(se_fb), overlap=length(intersected))
+  se_fb  <- se_fb[,intersected]
+  se_rna <- se_rna[,intersected]
+  
   #/ not sure whether SummarizedExperiments do that internally...ensure matching columns
   if(!all(colnames(se_rna)==colnames(se_fb))){
     matched <- as.numeric(na.omit(match(colnames(se_rna), colnames(se_fb))))
