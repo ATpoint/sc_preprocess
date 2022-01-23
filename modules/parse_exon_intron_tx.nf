@@ -5,6 +5,8 @@ process ParseExonIntronTx {
 
     label 'process_parse_exon_intron'
 
+    errorStrategy 'finish'
+
     publishDir params.outdir, mode: params.publishmode
 
     if(workflow.profile.contains('conda'))  { conda "$params.environment" }

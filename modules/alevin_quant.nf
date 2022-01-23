@@ -2,6 +2,8 @@ process AlevinQuant {
 
     tag "$sample_id"
 
+    errorStrategy 'finish'
+
     label 'process_quant_full'
 
     publishDir params.outdir, mode: params.publishmode
@@ -38,6 +40,8 @@ process AlevinQuantFB {
 
     tag "$sample_id"
 
+    errorStrategy 'finish'
+
     label 'process_quant_features'
 
     publishDir params.outdir, mode: params.publishmode
@@ -64,6 +68,7 @@ process AlevinQuantFB {
         -p $task.cpus \
         $params.additional \
         --dumpFeatures \
+        --keepCBFraction 1.0 \
         -1 ${R1} -2 ${R2}
     """
 

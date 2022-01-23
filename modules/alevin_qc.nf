@@ -4,6 +4,8 @@ process AlevinQC {
 
     tag "$sample_id"
 
+    errorStrategy 'finish'
+
     label 'process_alevinqc'
 
     publishDir params.outdir, mode: params.publishmode    

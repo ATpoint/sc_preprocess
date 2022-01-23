@@ -4,6 +4,8 @@ process ValidateSamplesheet {
     memory 100.MB
     time '5m'
 
+    errorStrategy 'finish'
+
     publishDir params.outdir, mode: params.publishmode
 
     if(workflow.profile.contains('conda'))  { conda "$params.environment" }

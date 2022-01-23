@@ -4,6 +4,8 @@ process WriteNcells {
     memory 100.MB
     time '5min'
 
+    errorStrategy 'finish'
+
     publishDir = [
         path: params.outdir, 
         mode: params.publishmode,

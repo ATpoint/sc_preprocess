@@ -3,6 +3,8 @@ process AlevinIndex {
 
     label 'process_idx'
 
+    errorStrategy 'finish'
+
     publishDir params.outdir, mode: params.publishmode
 
     if(workflow.profile.contains('conda'))  { conda "bioconda::salmon=1.6.0"}
@@ -43,6 +45,8 @@ process AlevinIndexFB {
 
     cpus 1
     memory 100.MB
+
+    errorStrategy 'finish'
 
     publishDir params.outdir, mode: params.publishmode
 

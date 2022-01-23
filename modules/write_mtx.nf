@@ -4,6 +4,8 @@ process WriteMtx {
 
     tag "$basename"
 
+    errorStrategy 'finish'
+
     label 'process_mtx'
 
     publishDir = [
