@@ -25,7 +25,7 @@ schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/]
 schema.idx_only       = [value: false, type: 'logical']
 schema.genome         = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/GRCm38.primary_assembly.genome.fa.gz',
                          type: 'string', mandatory: true]
-schema.gtf            = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz',
+schema.gtf            = [value: 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M23/gencode.vM23.annotation.gtf.gz',
                          type: 'string', mandatory: true]
 schema.gene_name      = [value: 'gene_name', type: 'string', mandatory: true]                 
 schema.gene_id        = [value: 'gene_id', type: 'string', mandatory: true]
