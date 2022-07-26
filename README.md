@@ -73,7 +73,7 @@ The user can either build an index for every new run or build the index first us
 Running with a premade index would require:<br>
 - `--idx`: Path to the index folder with the Alevin index files. This is what is outputted in `sc_preprocess_results/alevinIndex/` as folder named `idx_gentrome`
 - `--tgmap`: the tx2gene map. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
-- `--rrna`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
+- `--rrna`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.rRNA.txt`
 - `--mtrna`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
 - `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.features.tsv.gz`
 - `--gene2type`: a map connecting gene_name/id to gene_type. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
