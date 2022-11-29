@@ -32,7 +32,7 @@ schema.gene_id        = [value: 'gene_id', type: 'string', mandatory: true]
 schema.gene_type      = [value: 'gene_type', type: 'string', mandatory: true]
 schema.chrM           = [value: 'chrM', type: 'string', mandatory: true]
 schema.rrna           = [value: 'rRNA', type: 'string', mandatory: true]
-schema.idx_outdir     = [value: "${overall_outdir}/alevinIndex/", type: 'string', mandatory: true]
+schema.idx_outdir     = [value: "${overall_outdir}/alevin_idx/", type: 'string', mandatory: true]
 schema.idx_name       = [value: 'idx_gentrome', type: 'string', mandatory: true]
 schema.idx_args       = [value: '--sparse --gencode', type: 'string']
 
@@ -51,7 +51,7 @@ schema.features_file  = [value: '', type: 'string', mandatory: false]
 schema.r1_type            = [value: '--bc-geometry 1[1-16] --umi-geometry 1[17-28]', type: 'string', mandatory: true]
 schema.r2_type            = [value: '--read-geometry 2[1-91]', type: 'string', mandatory: true]
 schema.r2_type_fb         = [value: '--read-geometry 2[11-25]', type: 'string', mandatory: true]
-schema.quant_outdir       = [value: "${overall_outdir}/alevinQuant/", type: 'string']
+schema.quant_outdir       = [value: "${overall_outdir}/alevin_quant/", type: 'string']
 schema.libtype            = [value: 'ISR', type: 'string']
 schema.quant_args         = [value: '', type: 'string']
 schema.quant_args_fb      = [value: '', type: 'string']
@@ -64,7 +64,7 @@ schema.mtx_outdir     = [value: "${overall_outdir}/mtx/", type: 'string', mandat
 schema.rna_suffix     = [value: '_rna', type: 'string']
 
 // related to alevinQC:
-schema.qc_outdir      = [value: "${overall_outdir}/alevinQC/", type: 'string', mandatory: true]
+schema.qc_outdir      = [value: "${overall_outdir}/alevin_qc/", type: 'string', mandatory: true]
 
 // related to the container/environment for the R/Bioconductor part of this workflow
 schema.container      = [value:'atpoint/sc_preprocess:v1.5.0', type:'string', mandatory:true]

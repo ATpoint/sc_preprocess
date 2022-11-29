@@ -1,26 +1,23 @@
 # sc_preprocess
 
-<br>
-
 ![CI](https://github.com/ATpoint/sc_preprocess/actions/workflows/CI.yml/badge.svg)
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.10.6-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 
-<br>
-
 ## Introduction
 
-**sc_preprocess** is an automated preprocessing pipeline for 10x scRNA-seq data implemented using [Nextflow](https://www.nextflow.io/) which is fully containerized to take care of all required software and ensure reproducibility. It optionally supports feature barcode experiments such as CITE-Seq and cell hashing (HTO). The workhorse of this pipeline is the quantification software [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) from [Rob Patro's lab](https://combine-lab.github.io/) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). See also the publications for [salmon](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5600148/) and [alevin](https://pubmed.ncbi.nlm.nih.gov/30917859/) in Nature Methods and Genome Biology.
+**sc_preprocess** is a fully containerized preprocessing pipeline for 10x scRNA-seq data written in Nextflow DSL2 [Nextflow](https://www.nextflow.io/).
+It supports generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index and generation of spliced- and unspliced count tables. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). For quantification it uses [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
 
 ## Details
 
 When running with default parameters the following steps will be executed:
 
-1. Generate an expanded reference transcriptome containing all spliced (=exonic) and unspliced (intronic) transcript sequences. This expanded transcriptome is required for quantification to allow output of both **spliced- and unspliced counts**, e.g. for [velocity](https://www.embopress.org/doi/full/10.15252/msb.202110282) analysis. Also, this expanded reference is decoyed by the entire reference genome to perform [selective alignments](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02151-8) in order to improve mapping accuracy by capturing reads that better align to the genome than the transcriptome, removing potential gDNA contaminations and other spurious mappings. The indexing of this expanded reference is done by `salmon`.
+1. Generate a genome-decoyed and expanded reference transcriptome containing all spliced (=exonic) and unspliced (intronic) transcript sequences. This expanded transcriptome is required for quantification to allow output of both **spliced- and unspliced counts**, e.g. for [velocity](https://www.embopress.org/doi/full/10.15252/msb.202110282) analysis. Also, this expanded reference is decoyed by the entire reference genome to perform [selective alignments](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02151-8) in order to improve mapping accuracy by capturing reads that better align to the genome than the transcriptome, removing potential gDNA contaminations and other spurious mappings. The indexing of this expanded reference is done by `salmon`.
 
-2. Processing of the reads (fastq files) against the expanded reference using `alevin` performing cellular barcode (CB) detection, read mapping, Unique Molecular Identifier (UMI) deduplication and gene count estimation, resulting in per-cell gene-level abundance estimations.
+2. Processing of the reads (fastq files read from a CSV samplesheet) against the expanded reference using `alevin` performing cellular barcode (CB) detection, read mapping, Unique Molecular Identifier (UMI) deduplication and gene count estimation, resulting in per-cell gene-level abundance estimations.
 
 3. Split the obtained quantifications into spliced and unspliced count tables and save these in [mtx](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices) format for easy distribution and loading into downstream analysis environments such as R.
 
@@ -30,57 +27,58 @@ When running with default parameters the following steps will be executed:
 
 ## Usage
 
-The typical command line, e.g. on a HPC with Singularity and SLURM (see sections below) would be:
-
-```bash
-
-NXF_VER=21.10.6 \
-    nextflow run main.nf -profile singularity,slurm \
-    --genome path/to/genome.fa.gz \
-    --gtf path/to/gtf.gz \
-    --samplesheet path/to/samplesheet.csv \
-    -with-trace -with-report report.html -bg > report.log
-
-```    
-
-For a feature barcoding experiment one would use:
-
-```bash
-
-NXF_VER=21.10.6 \
-    nextflow run main.nf -profile singularity,slurm \
-    --genome path/to/genome.fa.gz \
-    --gtf path/to/gtf.gz \
-    --samplesheet path/to/samplesheet.csv \
-    --features_file path/to/feature_barcode_file.txt \
-    -with-trace -with-report report.html -bg > report.log
-
-```
-For details on the individual steps and the input samplesheet see below. The default output folder for all results is called `sc_preprocess_results` generated in the location from which the pipeline was launched.
-
 ### Indexing
 
-The quantification requires building an index against reference files. This requires two files, first a **reference genome fasta file** and second a **reference annotation in GTF format**. This is controlled by the options `--genome` and `--gtf`. The defaults are the mouse GENCODE references from version [M25](https://www.gencodegenes.org/mouse/release_M25.html). The user can provide either a download link here (Nextflow will then pull the files automatically) or provide paths to local files. We recommend to download these files manually though as we found the automated staging of files by Nextflow was unreliable at times.
+Typical command line for the indexing on a cluster with SLURM and Singularity:
 
-The pipeline then parses the spliced- and unspliced transcript sequences from these files and combines them into an expanded transcriptome. This requires the three flags `--gene_name`, `--gene_id` and `--gene_type` which have defaults to be compatible with GENCODE GTF files. They're used to find the columns in the GTF that store gene_name, gene_id and the gene_type. We also require the flags `--chrM` and `-rRNA`. The chrM flag takes the name of the mitochondrial chromosome, and the rRNA flag takes the gene_type in the GTF that indicates ribosomal genes. Both these information are later used during the cellular barcode whitelisting procedure and can be used in downstream analysis as QC metrics. The defaults for these flags are "chrM" and "rRNA" which is compatible with GENCODE annotations.
+```bash
+NXF_VER=21.10.6 nextflow run main.nf -profile singularity,slurm \
+    --idx_only --genome path/to/genome.fa.gz --gtf path/to/gtf.gz 
+    -with-trace idx.trace -with-report idx.html -bg > idx.log
+```    
 
- The entire genome from `--genome` is used as a decoy for [selective alignment](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02151-8), meaning that any reads better aligning to the genome rather than transcriptome will be "decoyed" aka removed. This information will be directly incorporated into the index so the user does not need to worry about that once the index is built.
+This will parse both spliced and unspliced transcript sequences directly from the genome using the GTF as guide and then run the indexing
+process on these files, using the provided genome as decoy. Six CPUs and 30GB of RAM are hardcoded in the default profile for this step.
 
-Finally, there is an option `--idx_args` which allows to pass any custom options to the indexing process. Available options can be 
-**Note** that when using non-GENCODE files the user should adjust the options `--gene_name`, `--gene_id` and `--gene_type` which are the names of the columns in the GTF storing these information and probably also `--chrM` (the name of chrM in that annotation) and `-rrna` which is the gene type containing the rRNA information. The chrM and rRNA information are used during the cell barcode whitelisting by Alevin. We currently by default pass the `--gencode` flag to the Alevin indexing process. If non-GENCODE references are used consider removing this by passing `--idx_args ''` to the Nextflow command line.
+**Indexing parameters**
 
-The user can either build an index for every new run or build the index first using the  `--idx_only` flag. In the latter case the pipeline stops after indexing so one could move the index to a permanent storage location and then run the rest of the pipeline separately.
-Running with a premade index would require:<br>
-- `--idx`: Path to the index folder with the Alevin index files. This is what is outputted in `sc_preprocess_results/alevinIndex/` as folder named `idx_gentrome`
-- `--tgmap`: the tx2gene map. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.tx2gene.tsv`
-- `--rrnagenes`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.rRNA.txt`
-- `--mtrnagenes`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.mtRNA.txt`
-- `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.expanded.features.tsv.gz`
-- `--gene2type`: a map connecting gene_name/id to gene_type. This is what is outputted in `sc_preprocess_results/alevinIndex/` as `annotation.gene2type.txt`
+`--idx_only`: logical, whether to only run the indexing process without any quantification  
+`--genome`: path to the genome fasta file (`.fa.gz`)   
+`--gtf`: path to the GTF reference file (`.gtf.gz`)  
+`--gene_id`: name of the column storing the gene ID in the GTF, default `gene_id`   
+`--gene_name`: name of the column storing the gene name in the GTF, default `gene_name`  
+`--gene_type`: name of the column storing the gene biotype in the GTF, default `gene_type`    
+`--chrM`: name of the mitochondrial chromosome, default `chrM`  
+`--rrna`: gene biotype for ribosomal RNAs, default `rRNA`  
+`--idx_outdir`: name of output folder inside the `sc_preprocess_results` directly to store the output  
+`--idx_name`: name of the index in which the actual index is stored inside `--idx_outdir`, default `idx`  
+`--idx_args`: additional arguments passed to `salmon index` step, default `--sparse --gencode`  
 
-Finally, there is `--idx_args` which allows to pass further arguments to `salmon index`. See `salmon index -h` or check the salmon docs for available arguments. By default we pass `--gencode --sparse` telling salmon that we use GENCODE-formatted files and to build a sparse index. The latter saves some memory but makes analysis slightly slower. Use `--idx_args ''` to remove these arguments or pass custom ones. Usually there is no need to modify the defaults.
+**Parameters if a premade index is used for quantification**
+- `--idx`: Path to the index folder with the Alevin index files. This is what is outputted in `sc_preprocess_results/alevin_idx/` as folder named `idx_gentrome`  
+- `--tgmap`: the tx2gene map. This is what is outputted in `sc_preprocess_results/alevin_idx/` as `annotation.expanded.tx2gene.tsv`  
+- `--rrnagenes`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevin_idx/` as `annotation.rRNA.txt`  
+- `--mtrnagenes`: gene names of mitochondrial genes. This is what is outputted in `sc_preprocess_results/alevin_idx/` as `annotation.mtRNA.txt`  
+- `--expanded_features`: gene names of rRNA genes. This is what is outputted in `sc_preprocess_results/alevin_idx/` as `annotation.expanded.features.tsv.gz`   
+- `--gene2type`: a map connecting gene_name/id to gene_type. This is what is outputted in `sc_preprocess_results/alevin_idx/` as `annotation.gene2type.txt`  
 
-### Samplesheet
+### Quantification
+
+Typical command line for the indexing on a cluster with SLURM and Singularity:
+
+```bash
+NXF_VER=21.10.6 nextflow run main.nf -profile singularity,slurm \
+    --samplesheet path/to/samnplesheet.csv \
+    --idx path_to_idx_folder \
+    --tgmap path_to_tgmap --rrnagenes path_to_rrnagenes_file --mtrnagenes path_to_mtrnagenes_file \
+    --expanded_features path_to_expanded_features_file --gene2type path_to_gene2type_file \
+    -with-trace quant.trace -with-report quant.html -bg > quant.log
+```    
+
+This will quantify the reads against the index, create spliced- and unspliced count tables and create the alevinQC report. As resources we hardcoded
+6 CPUs and 30GB of RAM which works well for mouse samples of typical size.
+
+**Samplesheet**
 
 The pipeline reads the fastq file pairs from a [samplesheet](https://github.com/ATpoint/sc_preprocess/blob/main/test/samplesheet.csv) which is a four-column CSV with a header.
 
@@ -96,7 +94,7 @@ The first line is the mandatory header followed by the sample to quantify:
 
 - column1 (`sample_id`) is the per-sample name to be used in the output. This can be any Unix-compatible name, and there is no need to match this name with the fastq file names as other software may require you to do. 
 - column2/3 (`R1/2`) are the paths to the fastq files for that sample. It either must be the full **absolute path** (don't use `~`) or alternative a path **relative** to the directory that this pipeline is started from using either of the three [implicit Nextflow variables](https://www.nextflow.io/docs/latest/script.html?highlight=basedir#implicit-variables) `$baseDir`, `$projectDir` and `$launchDir` (see example below).
-- column4 (`is_fb`) is a logical column with either `true` or `false` indicating whether this fastq file pair is a feature barcode experiment. If so then these files will be quantified against the barcode library provided by `--features-file` (see below). This column can be empty and then defaults to `false`.
+- column4 (`is_fb`) is a logical column with either `true` or `false` indicating whether this fastq file pair is a feature barcode experiment. If so then these files will be quantified against the barcode library provided by `--features-file` (see below). This column can be empty and then defaults to `false`. See below for details on feature barcoding experiments.
 
 An example using relative paths (same samples as in the example above) could be:
 
@@ -108,13 +106,9 @@ sample1,$baseDir/test/sample1SF_1.fastq.gz,$baseDir/test/sample1SF_2.fastq.gz,tr
 sample2,$baseDir/test/sample2_1.fastq.gz,$baseDir/test/sample2_2.fastq.gz,false
 ```
 
-**Technical replicates** from sequencing the same library on multiple lanes or in individual sequencing runs can be specified in the samplesheet by using the same `sample_id` for these files. In the example above `sample1` has two technical replicates (`sample_1/2.fastq.gz` and `sample1a_1/2.fastq.gz`) which will be merged by the pipeline prior to quantification.
+**Technical replicates** from sequencing the same library on multiple lanes or in individual sequencing runs can be specified in the samplesheet by using the same `sample_id` for these files. In the example above `sample1` has two technical replicates (`sample_1/2.fastq.gz` and `sample1a_1/2.fastq.gz`) which will be merged by the pipeline prior to quantification. The pipeline will validate the integrity of the samplesheet and detect if a fastq files was provided in the sheet more than once or if the fastq does not exist. If validation fails the pipeline exists with an error and a message that helps debugging the problem. 
 
-If fastq files are present in multiple directories and the user still wants a single folder with all input fastq files we recommend to create a new folder and use `ln -s` to make symlinks of these files into that new folder. This will collect all files in one place without that the fastq actually need to be moved. **As a remark:** The same strategy makes sense if renaming of files is desired. Be smart, don't touch or manually rename your precious raw data. Do it programatically and save the script or even better, make symlinks to the files and then rename those. That way the original files stay save and untouched.
-
-The pipeline will validate the integrity of the samplesheet and detect if a fastq files was provided in the sheet more than once or if the fastq does not exist. If validation fails the pipeline exists with an error and a message that helps debugging the problem. 
-
-### Feature Barcode Files
+**Feature barcoding experiments**
 
 If feature barcode experiments are to be quantified then the user must provide a `--features_file` which is a tab-separated list that in column1 stores the name of the feature barcode and in column2 the sequence, e.g.:
 
@@ -124,45 +118,28 @@ hto_2	GGTCGAGAGCATTCA
 hto_3	CTTGCCGCATGTCAT
 ```
 
-As mentioned above, the pipeline by default assumes 10x Chromium V3 libraries with totalSeqB/C feature barcodes which require barcode translation (see point 5 of "Details"). If using any other feature barcoding type then this should be turned off by providing the `--translate_barcode false` flag to the Nextflow command line.
-### Read processing
+If this file is provided then an index will be made for these files and the feature barcode fastq files will be quantified against it.
+The counts of the feature barcodes will be included to the bottom of the gene expression count tables.
 
-The read processing (=quantification, CB detection, UMI deduplication) process requires a couple of flags. The defaults assume 10x Chromium V3 libraries with CBs/UMIs in read1 and cDNA/features barcodes in read2. <br>
+**Note:** that the pipeline by default assumes 10x Chromium V3 libraries with totalSeqB/C feature barcodes which require barcode translation (see point 5 of the "Details" section above). If using any other feature barcoding type then this should be turned off by providing the `--translate_barcode false` flag to the Nextflow command line.
 
-- `--r1_type`: this flag defines structure of read1 in the experiment so the position and length of the CB and UMI. This must consist of the two options `--bc-geometry --umi-geometry` from `alevin`. The defaults are:<br>
-`--bc-geometry 1[1-16] --umi-geometry 1[17-28]` and indicate that the BC is in read1 from position 1-16 and the UMI from position 17-28, so 16bp CB and 12bp UMI as in Chromium V3. For Chromium V2 it would be 10bp UMIs so one would use `--r1_type '--bc-geometry 1[1-16] --umi-geometry 1[17-26]'`. 
+**Quantification parameters**
+
+- `--r1_type`: this flag defines structure of read1 in the experiment so the position and length of the CB and UMI. This must consist of the two options `--bc-geometry --umi-geometry` from `alevin`. The defaults are:  
+`--bc-geometry 1[1-16] --umi-geometry 1[17-28]` and indicate that the BC is in read1 from position 1-16 and the UMI from position 17-28, so 16bp CB and 12bp UMI as in Chromium V3. For Chromium V2 it would be 10bp UMIs so one would use `--r1_type '--bc-geometry 1[1-16] --umi-geometry 1[17-26]'`.  
 - `--r2_type`: same as above but defining the structure of read2. For Chromium V3 (the default) it would be:<br>
-`--r2_type '--read-geometry 2[1-91]'` meaning that the first 91bp of R2 should be used for quantification, as recommended by 10x. One could also use `1-end` here so `alevin` would only the entire read, e.g. in case of 150bp reads. We stick with the default of 91bp here fir consistency between runs as not every sequencing run may produce 150bp reads, depending on the machine and run mode.
+`--r2_type '--read-geometry 2[1-91]'` meaning that the first 91bp of R2 should be used for quantification, as recommended by 10x. One could also use `1-end` here so `alevin` would only the entire read, e.g. in case of 150bp reads. We stick with the default of 91bp here fir consistency between runs as not every sequencing run may produce 150bp reads, depending on the machine and run mode.  
 - `--R2_type_fb`: same as `--r2_type` but the read2 structure for feature barcode experiments. The defaults here assume totalSeqB feature barcoding:<br>
-`--read-geometry 2[11-25]` meaning that the feature barcodes are 15bp long and starting from at position 11. The original CITE-seq protocol would be `[1-15]`. 
-- `--libtype`: this flag defines the [fragment library type](https://salmon.readthedocs.io/en/latest/library_type.html). For 10x libraries that is `ISR` meaning a stranded paired-end library.
-- `--quants_args`: this flag allows to pass further arguments to the `alevin` processing. This can be any of the allowed `alevin` arguments (see its manual) such as generating inferential replicates. Is must **not** include any of `-o -i -p` as these options are already defined internally. See the [Alevin manual](https://salmon.readthedocs.io/en/latest/alevin.html#using-alevin) or the help via `salmon alevin -h` for details on further options.
+`--read-geometry 2[11-25]` meaning that the feature barcodes are 15bp long and starting from at position 11. The original CITE-seq protocol would be `[1-15]`.  
+- `--libtype`: this flag defines the [fragment library type](https://salmon.readthedocs.io/en/latest/library_type.html). For 10x libraries that is `ISR` meaning a stranded paired-end library.  
+- `--quants_args`: this flag allows to pass further arguments to the `alevin` processing. This can be any of the allowed `alevin` arguments (see its manual) such as generating inferential replicates. Is must **not** include any of `-o -i -p` as these options are already defined internally. See the [Alevin manual](https://salmon.readthedocs.io/en/latest/alevin.html#using-alevin) or the help via `salmon alevin -h` for details on further options.  
 
-As said above, the default assume 10x Chromium V3. If using feature barcodes the defaults go with totalSeqB/C sequences.
-
-### Resources
-
-Currently, 30GB of RAM are hardcoded as requirements for indexing and RNA quantification. This is necessary because we index and quantify against the expanded (spliced+unspliced) transcriptome with the entire genome as decoy. This works well for mouse samples. We did not test it for human samples yet. If resources are not sufficient then modify the process labels on top of the `nextflow.config` file or use a custom config file via `nextflow -c custom.config`. Indexing and quantification by default uses up to 6 CPUs. On our HPC the indexing usually takes 60-90' and the processing of a typical sample is usually completed after 2-3h. Note that Nextflow will use all available resources on the machine it runs this pipeline on.
-
-### Job Schedulers
-
-Any [scheduler/executor](https://www.nextflow.io/docs/latest/executor.html) that Nextflow supports can be used here. If the pipeline is supposed to run via `SLURM` we recommend adding the desired configuration into `configs/schedulers.config` (or any other custom Nextflow config file) and then importing that file with the `-c` option, see the [Nextflow docs](https://www.nextflow.io/docs/latest/config.html?highlight=config) for details on config files. The default `-profile slurm` submits a < 8h job to queue `normal`.
-
-### Software
-
-The pipeline is fully containerized via both Docker and Singularity. Use `-profile docker` or `profile singularity` to enable them. Alternatively, use `-profile conda` if none of these container engines are available, but note that containerization ensures fully identical software between runs while conda environments may differ between platforms, e.g. macOS vs Linux distros and upon release of new software versions. As a last option the user can compile all requires software locally, see the `environment.yml` and the module definitions in the `modules` folder for required software, but the latter is not recommended. Use the container engines if possible!
-
-### Output
+## Output
 
 The pipeline will produce an output folder `sc_preprocess_results` in the location from which the pipeline was launched that contains:
 
-- `alevinIdx`: folder with the expanded transcriptome index(`idx_gentrome`) and the feature barcode index (`idx_features`)
-- `alevinQuant`: folder with the alevin outputs (one folder per sample)
+- `alevin_idx`: folder with the expanded transcriptome index (`idx_gentrome`) and the feature barcode index (`idx_features`)
+- `alevin_quant`: folder with the alevin outputs (one folder per sample)
 - `mtx`: folder with the expression matrices as `mtx.gz` and the column and row annotations as `tsv.gz`. If feature barcode (FBs) libraries were present for a particular sample then the returned files will already be filtered for CBs found in both the RNA and FB experiment. The FB counts will be appended to the `mtx.gz` so will be the last entries in these files. The same goes for the `sample_feature.tsv.gz` file, where the feature barcode names will be the last entries.<br>
-- `alevinQC`: folder with the alevinQC html reports for each quantified library -- RNA and FB (if present). Note that in case of FBs this QC report will be based on the full RNA/FB experiment that has not been filtered for CBs present in both experiments. It is useful to judge the quality of both experiments independently.<br>
+- `alevin_qc`: folder with the alevinQC html reports for each quantified library -- RNA and FB (if present). Note that in case of FBs this QC report will be based on the full RNA/FB experiment that has not been filtered for CBs present in both experiments. It is useful to judge the quality of both experiments independently.<br>
 In this folder there will also be a file `summary_cellnumbers.txt` which summarizes the number of detected cells per sample in the RNA experiment and the number of intersecting cells with the FB experiment. If no FBs were present for that sample NAs are returned. The numbers are also presented as a barplot in `summary_cellnumbers.pdf`.
-
-The typical files required for downstream analysis are the `sample.mtx.gz` and associated barcode/features files. In case of feature barcoding that file will contain the FB quantifications at the bottom of that file. "Gene" names are 
-
-Depending on `--publishmode` the files in these folders are either real files or soft/hard/relative links to the Nextflow `work` directory.
-See the Nextflow docs on [publishDir](https://www.nextflow.io/docs/latest/process.html#publishdir) for details. The default is mode `copy` so the output folder contains real files rather than links. 
