@@ -51,14 +51,6 @@ jobs:
       - name: TEST-DOCKER_IDX_PROVIDED 
         run: NXF_VER=21.10.6 nextflow run main.nf -profile docker,test --idx $(realpath test/idx_test/idx_gentrome/)
 
-      # full with conda
-      - name: TEST-CONDA
-        run: |
-          conda config --add channels r
-          conda config --add channels conda-forge
-          conda config --add channels bioconda
-          NXF_VER=21.10.6 nextflow run main.nf -profile conda,test
-
       - uses: eWaterCycle/setup-singularity@v7
         with:
           singularity-version: 3.8.0
