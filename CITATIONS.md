@@ -14,6 +14,8 @@
 * [Alevin -- Feature Barcoding Experiments](https://combine-lab.github.io/alevin-tutorial/2020/alevin-features/)
 
 * [AlevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html)
+
+* [tximeta](https://www.bioconductor.org/packages/release/bioc/html/tximeta.html)
   
 ## General software
     
