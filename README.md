@@ -8,7 +8,7 @@
 
 ## Introduction
 
-**sc_preprocess** is a fully containerized preprocessing pipeline for 10x scRNA-seq data written in Nextflow DSL2 [Nextflow](https://www.nextflow.io/).
+**sc_preprocess** is a fully containerized preprocessing pipeline for 10x scRNA-seq data written in [Nextflow](https://www.nextflow.io/).
 It supports generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index and generation of spliced- and unspliced count tables. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). For quantification it uses [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
 
 ## Details
