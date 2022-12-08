@@ -1,9 +1,9 @@
-SC_PREPROCESS:ALEVIN_QC_FB:AlevinQC:	
+SC_PREPROCESS:ALEVIN_QC_FB:AlevinQC:sample1	
 	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1 sample1_fb _fb
-SC_PREPROCESS:ALEVIN_QC:AlevinQC:	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample2 sample2 empty
-SC_PREPROCESS:ALEVIN_QC:AlevinQC:	
+SC_PREPROCESS:ALEVIN_QC:AlevinQC:sample1	
 	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1 sample1 empty
+SC_PREPROCESS:ALEVIN_QC:AlevinQC:sample2	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample2 sample2 empty
 SC_PREPROCESS:INDEX_FB:AlevinIndexFB:	
 	salmon index --no-version-check -t hto.tsv -i idx_features --features -k7
 	awk 'OFS=	 {print $1, $1}' hto.tsv > idx_features/tgmap.txt
