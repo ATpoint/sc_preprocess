@@ -8,9 +8,7 @@ process AlevinQuant {
 
     publishDir params.outdir, mode: params.publishmode
 
-    if(workflow.profile.contains('conda'))  { conda "bioconda::salmon=1.6.0"}
-    if(workflow.profile.contains('docker')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
-    if(workflow.profile.contains('singularity')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
+    container params.container
 
     input:
     tuple val(sample_id), path(R1), path(R2), val(type)
@@ -21,6 +19,7 @@ process AlevinQuant {
 
     output:
     tuple val(sample_id), path(sample_id), emit: quants
+    tuple path("versions.txt"), path("command_lines.txt"), emit: versions
     
     script:
     """
@@ -32,6 +31,11 @@ process AlevinQuant {
         $params.additional \
         --dumpFeatures \
         -1 ${R1} -2 ${R2}
+
+    echo ${task.process}:${sample_id} > command_lines.txt
+    cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt
+
+    echo 'salmon:' \$(salmon --version | cut -d " " -f2) > versions.txt        
     """
 
 }
@@ -46,9 +50,7 @@ process AlevinQuantFB {
 
     publishDir params.outdir, mode: params.publishmode
 
-    if(workflow.profile.contains('conda'))  { conda "bioconda::salmon=1.6.0"}
-    if(workflow.profile.contains('docker')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
-    if(workflow.profile.contains('singularity')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
+    container params.container
 
     input:
     tuple val(sample_id), path(R1), path(R2), val(notused)
@@ -57,6 +59,7 @@ process AlevinQuantFB {
 
     output:
     tuple val(sample_id), path("${sample_id}${params.suffix}"), emit: quants
+    tuple path("versions.txt"), path("command_lines.txt"), emit: versions
     
     // as in https://combine-lab.github.io/alevin-tutorial/2020/alevin-features/
     script:
@@ -70,6 +73,11 @@ process AlevinQuantFB {
         --dumpFeatures \
         --keepCBFraction 1.0 \
         -1 ${R1} -2 ${R2}
+
+    echo ${task.process}:${sample_id} > command_lines.txt
+    cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt
+
+    echo 'salmon:' \$(salmon --version | cut -d " " -f2) > versions.txt                
     """
 
 }

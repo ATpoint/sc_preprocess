@@ -14,6 +14,7 @@ def Map schema = [:] // don't change this line
 schema.min_nf_version = [value: '21.10.6', type: 'string', mandatory: true, allowed: '']
 schema.publishmode    = [value: 'copy', type: 'string', mandatory: true, allowed:['symlink', 'rellink', 'link', 'copy', 'copyNoFollow', 'move']]
 schema.outdir         = [value: "$launchDir/sc_preprocess_results/", type: 'string', mandatory: true]
+schema.pipe_dir       = [value: "${schema.outdir['value']}/pipeline_info/", type: 'string', mandatory: true]
 
 // samplesheet:
 schema.samplesheet    = [value: '', type: 'string', pattern: /.*\.csv$/]
@@ -64,7 +65,7 @@ schema.rna_suffix     = [value: '_rna', type: 'string']
 schema.qc_outdir      = [value: "${schema.outdir['value']}/alevin_qc/", type: 'string', mandatory: true]
 
 // related to the container/environment for the R/Bioconductor part of this workflow
-schema.container      = [value:'atpoint/sc_preprocess:v1.6.0', type:'string', mandatory:true]
+schema.container      = [value:'atpoint/sc_preprocess:v1.6.1', type:'string', mandatory:true]
 schema.environment    = [value: "$baseDir/environment.yml", type:'string', mandatory: true ]
 
 // --------------------------------------------------------------------------------------------------------------
