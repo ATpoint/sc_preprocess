@@ -10,4 +10,4 @@ RUN apt update && \
 
 ENV PATH=/salmon-1.9.0_linux_x86_64/bin:$PATH
 
-RUN mamba env update --name base --file environment.yml
+RUN mamba env update --name base --file environment.yml && conda clean -a -q -y
