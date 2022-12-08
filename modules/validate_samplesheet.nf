@@ -8,9 +8,7 @@ process ValidateSamplesheet {
 
     publishDir params.outdir, mode: params.publishmode
 
-    if(workflow.profile.contains('conda'))  { conda "$params.environment" }
-    if(workflow.profile.contains('docker')) { container "$params.container" }
-    if(workflow.profile.contains('singularity')) { container "$params.container" }
+    container params.container
 
     input:
     path(samplesheet) 
@@ -20,10 +18,16 @@ process ValidateSamplesheet {
         
     output:
     path("samplesheet_validated.txt"), emit: ssheet
+    tuple path("versions.txt"), path("command_lines.txt"), emit: versions
         
     script: 
     """
     Rscript --vanilla $baseDir/bin/validate_samplesheet.R $samplesheet $basedir $launchdir $projectdir
+
+    echo ${task.process}: > command_lines.txt
+    cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt
+    
+    echo 'R:' \$(R --version | head -n1 | cut -d " " -f3) > versions.txt
     """                
 
 }

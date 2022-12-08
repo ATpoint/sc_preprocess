@@ -7,8 +7,9 @@
 
 ## Introduction
 
-**sc_preprocess** is a fully containerized preprocessing pipeline for 10x scRNA-seq data written in [Nextflow](https://www.nextflow.io/).
-It supports generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index and generation of spliced- and unspliced count tables. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). For quantification it uses [salmon](https://salmon.readthedocs.io/en/latest/salmon.html) and its scRNA-seq module [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
+**sc_preprocess** is a containerized preprocessing pipeline for 10x scRNA-seq data written in [Nextflow](https://www.nextflow.io/).
+It supports generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index and generation of spliced- and unspliced count tables. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). The indexing procedure relies on extraction of spliced and unspliced counts from a genome/GTF using [eisaR(https://bioconductor.org/packages/release/bioc/html/eisaR.html) followed by index building with [salmon](https://salmon.readthedocs.io/en/latest/salmon.html). The quantification happens via [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
+The indexing and quantification workflow as well as generation of count tables is based on [this tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/) from the `salmon/alevin` developers.
 
 ## Details
 
@@ -26,18 +27,18 @@ When running with default parameters the following steps will be executed:
 
 ## Usage
 
+Typically one would build an index first and then run the quantification separately.
 ### Indexing
 
 Typical command line for the indexing on a cluster with SLURM and Singularity:
 
 ```bash
-NXF_VER=21.10.6 nextflow run main.nf -profile singularity,slurm \
-    --idx_only --genome path/to/genome.fa.gz --gtf path/to/gtf.gz 
-    -with-trace idx.trace -with-report idx.html -bg > idx.log
+NXF_VER=21.10.6 nextflow run main.nf -profile singularity,slurm --idx_only --genome path/to/genome.fa.gz --gtf path/to/gtf.gz
 ```    
 
 This will parse both spliced and unspliced transcript sequences directly from the genome using the GTF as guide and then run the indexing
-process on these files, using the provided genome as decoy. Six CPUs and 30GB of RAM are hardcoded in the default profile for this step.
+process on these files, using the provided genome as decoy. Six CPUs and 30GB of RAM are hardcoded in the default profile for this step,
+and this is sufficient for mouse data when using GENCODE files.
 
 **Indexing parameters**
 
@@ -63,19 +64,18 @@ process on these files, using the provided genome as decoy. Six CPUs and 30GB of
 
 ### Quantification
 
-Typical command line for the indexing on a cluster with SLURM and Singularity:
+Typical command line for the indexing on a HPC with SLURM and Singularity. The option parameters (tgmap, rrnagenes...) were
+all produced during the indexing step (see above).
 
 ```bash
 NXF_VER=21.10.6 nextflow run main.nf -profile singularity,slurm \
-    --samplesheet path/to/samnplesheet.csv \
+    --samplesheet path/to/samplesheet.csv \
     --idx path_to_idx_folder \
     --tgmap path_to_tgmap --rrnagenes path_to_rrnagenes_file --mtrnagenes path_to_mtrnagenes_file \
-    --expanded_features path_to_expanded_features_file --gene2type path_to_gene2type_file \
-    -with-trace quant.trace -with-report quant.html -bg > quant.log
+    --expanded_features path_to_expanded_features_file --gene2type path_to_gene2type_file
 ```    
 
-This will quantify the reads against the index, create spliced- and unspliced count tables and create the alevinQC report. As resources we hardcoded
-6 CPUs and 30GB of RAM which works well for mouse samples of typical size.
+This will quantify the reads against the index, create spliced- and unspliced count tables and create the alevinQC report. As resources we hardcoded 6 CPUs and 30GB of RAM which works well for mouse samples of typical size.
 
 **Samplesheet**
 
@@ -142,3 +142,4 @@ The pipeline will produce an output folder `sc_preprocess_results` in the locati
 - `mtx`: folder with the expression matrices as `mtx.gz` and the column and row annotations as `tsv.gz`. If feature barcode (FBs) libraries were present for a particular sample then the returned files will already be filtered for CBs found in both the RNA and FB experiment. The FB counts will be appended to the `mtx.gz` so will be the last entries in these files. The same goes for the `sample_feature.tsv.gz` file, where the feature barcode names will be the last entries.<br>
 - `alevin_qc`: folder with the alevinQC html reports for each quantified library -- RNA and FB (if present). Note that in case of FBs this QC report will be based on the full RNA/FB experiment that has not been filtered for CBs present in both experiments. It is useful to judge the quality of both experiments independently.<br>
 In this folder there will also be a file `summary_cellnumbers.txt` which summarizes the number of detected cells per sample in the RNA experiment and the number of intersecting cells with the FB experiment. If no FBs were present for that sample NAs are returned. The numbers are also presented as a barplot in `summary_cellnumbers.pdf`.
+- `pipeline_info`: folder contains `software_versions.txt` listing all software versions used in the pipeline and `command_lines.txt` listing the exact command lines used in the processes  

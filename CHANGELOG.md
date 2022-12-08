@@ -1,5 +1,9 @@
 # Changelog
 
+
+## v2.3
+- report command lines and software versions used in the pipeline to new output folder `pipeline_dir`
+- conda no longer supported, everything via container or local execution
 ## v2.2
 - added error strategy to each module, now submitted processes will finish if any process fails rather than killing the entire pipeline
 - added `--keepCBFraction 1.0` flag to the FB quantification process

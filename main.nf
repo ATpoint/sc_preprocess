@@ -84,7 +84,11 @@ include { WriteNcells           }   from './modules/summary_cells'              
 //------------------------------------------------------------------------  
 
 include { AlevinQC              }   from './modules/alevin_qc'                  addParams(  outdir:         params.qc_outdir)
-                                                                                            
+
+//------------------------------------------------------------------------  
+
+include{ CommandLines           }   from './modules/commandline'                addParams(  outdir:         params.pipe_dir)                                                              
+                                                                                      
 //------------------------------------------------------------------------      
 // Validate that samplesheet exists and that the fastq files exist
 //------------------------------------------------------------------------
@@ -193,6 +197,7 @@ workflow VALIDATE {
 
     emit:
         samplesheet = ValidateSamplesheet.out.ssheet
+        versions = ValidateSamplesheet.out.versions
 
 }
 
@@ -214,6 +219,7 @@ workflow INDEX_GENTROME {
         idx   = AlevinIndex.out.idx      
         ftrs  = ParseExonIntronTx.out.features
         g2t   = ParseExonIntronTx.out.gene2type
+        versions = ParseExonIntronTx.out.versions.concat(AlevinIndex.out.versions)
 
 }
 
@@ -230,6 +236,7 @@ workflow INDEX_FB {
     emit: 
         idx    = AlevinIndexFB.out.idx
         tgmap  = AlevinIndexFB.out.tgmap
+        versions = AlevinIndexFB.out.versions
 
 }
 
@@ -248,6 +255,7 @@ workflow QUANT {
 
     emit:
         quants = AlevinQuant.out.quants     
+        versions = AlevinQuant.out.versions
 
 }
 
@@ -264,6 +272,7 @@ workflow QUANT_FB {
 
     emit:
         quants = AlevinQuantFB.out.quants                
+        versions = AlevinQuantFB.out.versions
 
 }
 
@@ -284,6 +293,7 @@ workflow WRITE_MTX {
         barcodes = WriteMtx.out.barcodes      
         features = WriteMtx.out.features
         ncells   = WriteMtx.out.ncells
+        versions = WriteMtx.out.versions
 
 }
 
@@ -294,6 +304,9 @@ workflow SUMMARY {
 
     main:
         WriteNcells(dirs)
+
+    emit:
+        versions = WriteNcells.out.versions        
             
 }
 
@@ -303,8 +316,11 @@ workflow ALEVIN_QC {
     take:
         quants
 
-        main:
-            AlevinQC(quants, 'empty')
+    main:
+        AlevinQC(quants, 'empty')
+
+    emit:
+        versions = AlevinQC.out.versions            
 
 }
 
@@ -313,8 +329,11 @@ workflow ALEVIN_QC_FB {
     take:
         quants
 
-        main:
-            AlevinQC(quants, params.fb_suffix)
+    main:
+        AlevinQC(quants, params.fb_suffix)
+
+    emit:
+        versions = AlevinQC.out.versions        
 
 }
 
@@ -336,6 +355,7 @@ workflow SC_PREPROCESS {
     main:
 
         VALIDATE(samplesheet)
+        validate_versions = VALIDATE.out.versions
 
         // channel with the validated samplesheet
         ch_samplesheet = VALIDATE.out.samplesheet.splitCsv(header: true)
@@ -356,18 +376,30 @@ workflow SC_PREPROCESS {
 
         // Index gentrome and then quantify against it:
         QUANT(ch_input_quant, tgmap, rrna, mtrna, idx)
+        quant_versions = QUANT.out.versions
 
         ALEVIN_QC(QUANT.out.quants)
-
+        alevinqc_versions = ALEVIN_QC.out.versions
+        
+        
         // Index SFs and then quantify against it:
         if(params.features_file!=''){
 
             INDEX_FB(params.features_file, "idx_features")
+            indexfb_versions = INDEX_FB.out.versions
 
             QUANT_FB(ch_input_quant_fb, INDEX_FB.out.idx, INDEX_FB.out.tgmap)
+            quantfb_versions = QUANT_FB.out.versions
 
             ALEVIN_QC_FB(QUANT_FB.out.quants)
+            alevinqcfb_versions = ALEVIN_QC_FB.out.versions
             
+        } else {
+
+            indexfb_versions = Channel.empty()
+            quantfb_versions = Channel.empty()
+            alevinqcfb_versions = Channel.empty()
+
         }
 
         /* 
@@ -395,8 +427,27 @@ workflow SC_PREPROCESS {
         }
 
         WRITE_MTX(ch_quants, ftrs, gene2type, ch_translate.collect())
-        
+        writemtx_versions = WRITE_MTX.out.versions
+
         SUMMARY(WRITE_MTX.out.ncells.collect())
+        summary_versions = SUMMARY.out.versions
+
+        x_commands = validate_versions.concat(quant_versions, alevinqc_versions, indexfb_versions, quantfb_versions,
+                                              alevinqcfb_versions, writemtx_versions, summary_versions)
+                     .map {it [1]}.flatten().collect()
+
+        x_versions = validate_versions.concat(quant_versions.first(), 
+                                              alevinqc_versions.first(), 
+                                              indexfb_versions, 
+                                              quantfb_versions.first(),
+                                              alevinqcfb_versions.first(), 
+                                              writemtx_versions.first(), 
+                                              summary_versions)              
+                     .map {it [0]}
+                     .flatten()
+                     .collect()
+
+        CommandLines(x_commands, x_versions)
 
 }
 
@@ -416,6 +467,18 @@ workflow {
         use_mtrna     = INDEX_GENTROME.out.mtrna
         use_expanded_features = INDEX_GENTROME.out.ftrs   // expanded features
         use_gene2type = INDEX_GENTROME.out.g2t
+
+        indexgentrome_versions = INDEX_GENTROME.out.versions
+
+        x_commands = indexgentrome_versions
+                     .map {it [1]}.flatten().collect()
+
+        x_versions = indexgentrome_versions            
+                     .map {it [0]}
+                     .flatten()
+                     .collect()
+
+        CommandLines(x_commands, x_versions)                     
 
     }
     

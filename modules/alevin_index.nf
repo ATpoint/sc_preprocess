@@ -1,4 +1,3 @@
-
 process AlevinIndex {
 
     label 'process_idx'
@@ -7,9 +6,7 @@ process AlevinIndex {
 
     publishDir params.outdir, mode: params.publishmode
 
-    if(workflow.profile.contains('conda'))  { conda "bioconda::salmon=1.6.0"}
-    if(workflow.profile.contains('docker')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
-    if(workflow.profile.contains('singularity')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
+    container params.container
 
     input:
     path(genome) 
@@ -20,6 +17,7 @@ process AlevinIndex {
     path("decoynames.txt")
     path("gentrome.fa.gz")
     path(idxname), emit: idx
+    tuple path("versions.txt"), path("command_lines.txt"), emit: versions
     
     script: 
 
@@ -37,6 +35,11 @@ process AlevinIndex {
         -i $idxname \
         -p $task.cpus \
         $params.additional
+
+    echo ${task.process}: > command_lines.txt
+    cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt
+
+    echo 'salmon:' \$(salmon --version | cut -d " " -f2) > versions.txt        
     """                
 
 }
@@ -50,9 +53,7 @@ process AlevinIndexFB {
 
     publishDir params.outdir, mode: params.publishmode
 
-    if(workflow.profile.contains('conda'))  { conda "bioconda::salmon=1.6.0"}
-    if(workflow.profile.contains('docker')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
-    if(workflow.profile.contains('singularity')) { container "quay.io/biocontainers/salmon:1.6.0--h84f40af_0" }
+    container params.container
 
     input:
     path(featureset) 
@@ -61,6 +62,7 @@ process AlevinIndexFB {
     output:
     path(idxname), emit: idx
     path("$idxname/tgmap.txt"), emit: tgmap
+    tuple path("versions.txt"), path("command_lines.txt"), emit: versions
     
     script: 
     """
@@ -71,6 +73,11 @@ process AlevinIndexFB {
         -k7
 
     awk 'OFS=\"\t\" {print \$1, \$1}' $featureset > "$idxname/tgmap.txt"
+
+    echo ${task.process}: > command_lines.txt
+    cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt
+
+    echo 'salmon:' \$(salmon --version | cut -d " " -f2) > versions.txt
     """                
 
 }

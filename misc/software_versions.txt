@@ -1,0 +1,9 @@
+alevinQC: 1.14.0
+fishpond: 2.4.0
+Matrix: 1.5.3
+optparse: 1.7.3
+R: 4.2.2
+rtracklayer: 1.58.0
+salmon: 1.9.0
+SummarizedExperiment: 1.28.0
+tximeta: 1.16.0
