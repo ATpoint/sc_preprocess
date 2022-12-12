@@ -9,7 +9,8 @@
 
 **sc_preprocess** is a containerized preprocessing pipeline for 10x scRNA-seq data written in [Nextflow](https://www.nextflow.io/).
 It supports generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index and generation of spliced- and unspliced count tables. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). The indexing procedure relies on extraction of spliced and unspliced counts from a genome/GTF using [eisaR(https://bioconductor.org/packages/release/bioc/html/eisaR.html) followed by index building with [salmon](https://salmon.readthedocs.io/en/latest/salmon.html). The quantification happens via [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
-The indexing and quantification workflow as well as generation of count tables is based on [this tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/) from the `salmon/alevin` developers.
+
+The pipeline basically implements the code suggestions of the alevin developers in [their tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/) from the `salmon/alevin` developers.
 
 ## Details
 
