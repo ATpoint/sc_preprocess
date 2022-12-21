@@ -92,20 +92,20 @@ This will quantify the reads against the index, create spliced- and unspliced co
 
 **Samplesheet**
 
-The pipeline reads the fastq file pairs from a [samplesheet](https://github.com/ATpoint/sc_preprocess/blob/main/test/samplesheet.csv) which is a four-column CSV with a header.
+The pipeline reads the fastq file pairs from a [samplesheet](https://github.com/ATpoint/sc_preprocess/blob/main/test/samplesheet.csv) which is a five-column CSV with a header.
 
 ```bash
-sample_id,R1,R2,is_fb
-sample1,/full/path/to/test/sample1_1.fastq.gz,/full/path/to/test/sample1_2.fastq.gz,false
-sample1,/full/path/to/test/sample1a_1.fastq.gz,/full/path/to/test/sample1a_2.fastq.gz,false
-sample1,/full/path/to/test/sample1SF_1.fastq.gz,/full/path/to/test/sample1SF_2.fastq.gz,true
-sample2,/full/path/to/test/sample2_1.fastq.gz,/full/path/to/test/sample2_2.fastq.gz,false
+sample,r1,r2,libtype,is_fb
+sample1,$baseDir/test/sample1_1.fastq.gz,$baseDir/test/sample1_2.fastq.gz,ISR,false
+sample1,$baseDir/test/sample1a_1.fastq.gz,$baseDir/test/sample1a_2.fastq.gz,ISR,false
+sample1,$baseDir/test/sample1SF_1.fastq.gz,$baseDir/test/sample1SF_2.fastq.gz,ISR,true
+sample2,$baseDir/test/sample2_1.fastq.gz,$baseDir/test/sample2_2.fastq.gz,ISR,false
 ```
 
 The first line is the mandatory header followed by the sample to quantify:
 
-- column1 (`sample_id`) is the per-sample name to be used in the output. This can be any Unix-compatible name, and there is no need to match this name with the fastq file names as other software may require you to do. 
-- column2/3 (`R1/2`) are the paths to the fastq files for that sample. It either must be the full **absolute path** (don't use `~`) or alternative a path **relative** to the directory that this pipeline is started from using either of the three [implicit Nextflow variables](https://www.nextflow.io/docs/latest/script.html?highlight=basedir#implicit-variables) `$baseDir`, `$projectDir` and `$launchDir` (see example below).
+- column1 (`sample`) is the per-sample name to be used in the output. This can be any Unix-compatible name, and there is no need to match this name with the fastq file names as other software may require you to do. 
+- column2/3 (`r1/2`) are the paths to the fastq files for that sample. It either must be the full **absolute path** (don't use `~`) or alternative a path **relative** to the directory that this pipeline is started from using either of the three [implicit Nextflow variables](https://www.nextflow.io/docs/latest/script.html?highlight=basedir#implicit-variables) `$baseDir`, `$projectDir` and `$launchDir` (see example below).
 - column4 is the [library type](https://salmon.readthedocs.io/en/latest/salmon.html#what-s-this-libtype) so basically the strandedness and layout of the library. That would be `ISR` for 10x Chromium data.
 - column5 (`is_fb`) is a logical column with either `true` or `false` indicating whether this fastq file pair is a feature barcode experiment. If so then these files will be quantified against the barcode library provided by `--features-file` (see below). This column can be empty and then defaults to `false`. See below for details on feature barcoding experiments.
 
