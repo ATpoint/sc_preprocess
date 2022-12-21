@@ -18,6 +18,15 @@
 The pipeline basically implements the code suggestions of the salmon/alevin developers in [their tutorial](https://combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/).
 This covers generation of a genome-decoyed and expanded (spliced+unspliced) transcriptome index directly from reference annotations, quantification of reads against this index, generation of spliced- and unspliced count tables and a basic QC summary report. It optionally supports feature barcoding experiments such as CITE-Seq or cell hashtag oligos (HTO). The indexing procedure relies on extraction of spliced and unspliced counts from a genome/GTF using [eisaR](https://bioconductor.org/packages/release/bioc/html/eisaR.html) followed by index building with [salmon](https://salmon.readthedocs.io/en/latest/salmon.html). The quantification happens via [alevin](https://salmon.readthedocs.io/en/latest/alevin.html). Generation of count tables from the quantification results is achieved via [tximeta](https://bioconductor.org/packages/release/bioc/html/tximeta.html). A QC summary report is provided by [alevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html).
 
+Run the test profile after cloning this repo to see produced output, see also the [output description](#Output).
+
+```bash
+NXF_VER=22.10.4 nextflow run main.nf -profile docker,test --features_file $(realpath test/hto.tsv) --samplesheet $(realpath test/samplesheet.csv)
+```
+
+For a summary of all current software versions and command lines (based on the [test data](test/)) see the [command line](misc/command_lines.txt) and
+[software version](misc/software_versions.txt) summaries in the [misc](misc/) folder. 
+
 ## Workflow
 
 The pipeline covers these steps:
