@@ -1,5 +1,9 @@
 alevinQC: 1.14.0
+Biostrings: 2.66.0
+BSgenome: 1.66.1
+eisaR: 1.10.0
 fishpond: 2.4.0
+GenomicFeatures: 1.50.2
 Matrix: 1.5.3
 optparse: 1.7.3
 R: 4.2.2

@@ -1,23 +1,39 @@
-SC_PREPROCESS:ALEVIN_QC_FB:AlevinQC:sample1	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1 sample1_fb _fb
-SC_PREPROCESS:ALEVIN_QC:AlevinQC:sample1	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1 sample1 empty
-SC_PREPROCESS:ALEVIN_QC:AlevinQC:sample2	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample2 sample2 empty
-SC_PREPROCESS:INDEX_FB:AlevinIndexFB:	
-	salmon index --no-version-check -t hto.tsv -i idx_features --features -k7
-	awk 'OFS=	 {print $1, $1}' hto.tsv > idx_features/tgmap.txt
-SC_PREPROCESS:QUANT_FB:AlevinQuantFB:sample1	
-	salmon alevin --no-version-check -i idx_features --tgMap tgmap.txt -o sample1_fb --libType ISR -p 1 --forceCells 5000 --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --dumpFeatures --keepCBFraction 1.0 -1 sample1SF_1.fastq.gz -2 sample1SF_2.fastq.gz
-SC_PREPROCESS:QUANT:AlevinQuant:sample1	
-	salmon alevin --no-version-check -i idx_gentrome --tgMap annotation.expanded.tx2gene.tsv --mrna annotation.mtRNA.txt --rrna annotation.rRNA.txt -o sample1 -l ISR -p 1 --forceCells 5000 --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[1-91] --dumpFeatures -1 sample1_1.fastq.gz sample1a_1.fastq.gz -2 sample1_2.fastq.gz sample1a_2.fastq.gz
-SC_PREPROCESS:QUANT:AlevinQuant:sample2	
-	salmon alevin --no-version-check -i idx_gentrome --tgMap annotation.expanded.tx2gene.tsv --mrna annotation.mtRNA.txt --rrna annotation.rRNA.txt -o sample2 -l ISR -p 1 --forceCells 5000 --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[1-91] --dumpFeatures -1 sample2_1.fastq.gz -2 sample2_2.fastq.gz
-SC_PREPROCESS:SUMMARY:WriteNcells:	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/summary.R
-SC_PREPROCESS:VALIDATE:ValidateSamplesheet:	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/validate_samplesheet.R samplesheet.csv /home/runner/work/sc_preprocess/sc_preprocess /home/runner/work/sc_preprocess/sc_preprocess /home/runner/work/sc_preprocess/sc_preprocess
-SC_PREPROCESS:WRITE_MTX:WriteMtx:sample1	
+AlevinIndexFB:	
+	salmon index --no-version-check -t hto.tsv -i idx_fb --features -k7
+	awk 'OFS=	 {print $1, $1}' hto.tsv > idx_fb/tgmap.txt
+AlevinQC:sample1	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1 sample1
+AlevinQC:sample1_fb	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample1_fb sample1_fb
+AlevinQC:sample2	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample2 sample2
+AlevinQC:sample3	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample3 sample3
+AlevinQC:sample3_fb	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/alevin_qc.R sample3_fb sample3_fb
+INDEXING:AlevinIndex:	
+	gzip -cd example_genome.fa.gz | grep '^>' | cut -d   -f 1 | awk '{gsub(>,);print}' > decoynames.txt
+	cat annotation.expanded.fa.gz example_genome.fa.gz > gentrome.fa.gz
+	salmon index --no-version-check -t gentrome.fa.gz -d decoynames.txt -i idx_gentrome -p 1 --sparse
+INDEXING:ParseExonIntronTx:	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/parse_introns.R example_genome.fa.gz example_annot.gtf.gz gene_id gene_name gene_type 150 chrM Mt_rRNA
+Mtx:sample1	
 	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/mtx.R --sampleid sample1 --alevin_rna sample1 --alevin_fb sample1_fb --expanded_features annotation.expanded.features.tsv.gz --gene2type annotation.gene2type.txt --translate_table translate_list.txt.gz --do_translate
-SC_PREPROCESS:WRITE_MTX:WriteMtx:sample2	
-	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/mtx.R --sampleid sample2 --alevin_rna sample2 --alevin_fb null --expanded_features annotation.expanded.features.tsv.gz --gene2type annotation.gene2type.txt --translate_table translate_list.txt.gz --do_translate
+Mtx:sample2	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/mtx.R --sampleid sample2 --alevin_rna sample2 --expanded_features annotation.expanded.features.tsv.gz --gene2type annotation.gene2type.txt
+Mtx:sample3	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/mtx.R --sampleid sample3 --alevin_rna sample3 --alevin_fb sample3_fb --expanded_features annotation.expanded.features.tsv.gz --gene2type annotation.gene2type.txt --translate_table translate_list.txt.gz --do_translate
+Quant:sample1	
+	salmon alevin --no-version-check -i idx_gentrome --tgMap annotation.expanded.tx2gene.tsv --mrna annotation.mtRNA.txt --rrna annotation.rRNA.txt -o sample1 -l ISR -p 1 --dumpFeatures --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[1-91] --forceCells 1000 -1 sample1_1.fastq.gz sample1a_1.fastq.gz -2 sample1_2.fastq.gz sample1a_2.fastq.gz
+Quant:sample2	
+	salmon alevin --no-version-check -i idx_gentrome --tgMap annotation.expanded.tx2gene.tsv --mrna annotation.mtRNA.txt --rrna annotation.rRNA.txt -o sample2 -l ISR -p 1 --dumpFeatures --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[1-91] --forceCells 1000 -1 sample2_1.fastq.gz -2 sample2_2.fastq.gz
+Quant:sample3	
+	salmon alevin --no-version-check -i idx_gentrome --tgMap annotation.expanded.tx2gene.tsv --mrna annotation.mtRNA.txt --rrna annotation.rRNA.txt -o sample3 -l ISR -p 1 --dumpFeatures --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[1-91] --forceCells 1000 -1 sample3_1.fastq.gz -2 sample3_2.fastq.gz
+QuantFB:sample1	
+	salmon alevin --no-version-check -i idx_fb --tgMap tgmap.txt -o sample1_fb -l ISR -p 1 --dumpFeatures --keepCBFraction 1.0 --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --forceCells 1000 -1 sample1SF_1.fastq.gz -2 sample1SF_2.fastq.gz
+QuantFB:sample3	
+	salmon alevin --no-version-check -i idx_fb --tgMap tgmap.txt -o sample3_fb -l ISR -p 1 --dumpFeatures --keepCBFraction 1.0 --bc-geometry 1[1-16] --umi-geometry 1[17-28] --read-geometry 2[11-25] --forceCells 1000 -1 sample3SF_1.fastq.gz -2 sample3SF_2.fastq.gz
+VALIDATE:ValidateSamplesheet:	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/validate_samplesheet.R samplesheet.csv
+WriteNcells:	
+	Rscript --vanilla /home/runner/work/sc_preprocess/sc_preprocess/bin/summary.R
