@@ -15,6 +15,8 @@
 
 * [AlevinQC](https://www.bioconductor.org/packages/release/bioc/html/alevinQC.html)
 
+* [eisaR](https://bioconductor.org/packages/release/bioc/html/eisaR.html)
+
 * [tximeta](https://www.bioconductor.org/packages/release/bioc/html/tximeta.html)
   
 ## General software
