@@ -4,6 +4,7 @@
 - general overhaul and code cleanup, robustification
 - most modules now accept meta maps for easier parsing of libtype and feature barcode status
 - samplesheet now contains the libtype for each sample
+- more documentation
 
 ## v2.3
 - report command lines and software versions used in the pipeline to new output folder `pipeline_dir`
