@@ -1,5 +1,7 @@
-sample_id,R1,R2,is_fb
-sample1,$baseDir/test/sample1_1.fastq.gz,$baseDir/test/sample1_2.fastq.gz,false
-sample1,$baseDir/test/sample1a_1.fastq.gz,$baseDir/test/sample1a_2.fastq.gz,false
-sample1,$baseDir/test/sample1SF_1.fastq.gz,$baseDir/test/sample1SF_2.fastq.gz,true
-sample2,$baseDir/test/sample2_1.fastq.gz,$baseDir/test/sample2_2.fastq.gz,false
+sample,r1,r2,libtype,is_fb
+sample1,$baseDir/test/sample1_1.fastq.gz,$baseDir/test/sample1_2.fastq.gz,ISR,false
+sample1,$baseDir/test/sample1a_1.fastq.gz,$baseDir/test/sample1a_2.fastq.gz,ISR,false
+sample1,$baseDir/test/sample1SF_1.fastq.gz,$baseDir/test/sample1SF_2.fastq.gz,ISR,true
+sample2,$baseDir/test/sample2_1.fastq.gz,$baseDir/test/sample2_2.fastq.gz,ISR,false
+sample3,$baseDir/test/sample3_1.fastq.gz,$baseDir/test/sample3_2.fastq.gz,ISR,false
+sample3,$baseDir/test/sample3SF_1.fastq.gz,$baseDir/test/sample3SF_2.fastq.gz,ISR,true

@@ -14,6 +14,7 @@ ANSI_RED     = "\u001B[31m"
 ANSI_GREEN   = "\u001B[32m"
 ANSI_YELLOW  = "\u001B[33m"
 DASHEDDOUBLE = "=".multiply(121)
+DASHEDSINGLE = "-".multiply(121)
     
 // Function for printing consistent error messages:
 def ErrorMessenger(base_message='', additional_message=''){
@@ -56,6 +57,13 @@ def ValidateParams(){
     // Go through each schema entry and validate:
     schema.each { schema_name, entry -> 
     
+        // ignore titeling options:
+        if(entry['title'].toString() != "null"){
+            if(entry.keySet().contains("title")){
+              return
+            }
+        }
+
         // If there is a param with the same name use the 'value' of it instead of the schema value:
         if(params.keySet().contains(schema_name)){
             schema[schema_name]['value'] = params[schema_name]
@@ -137,7 +145,7 @@ def ValidateParams(){
         if(schema_type=="string"){
 
             // hack, if param in schema was empty like [value:''] then groovy makes this a boolean so convert back to string here
-            if(schema_value instanceof Boolean) schema_value = ''
+            schema_value = schema_value instanceof Boolean ? "hello" : schema_value
 
             if((schema_value !instanceof String) && (schema_value !instanceof GString)){
                 ErrorMessenger(value_type_match_error, "=> You provided: $schema_value")
@@ -219,13 +227,7 @@ def ValidateParams(){
 
         System.exit(1)     
 
-    } else {
-
-        println("${ANSI_GREEN}${DASHEDDOUBLE}")
-        println("[INFO] Schema validation successful!")
-        println("$DASHEDDOUBLE${ANSI_RESET}")
-
-    }
+    } 
 
     // [VALIDATION] Minimal Nextflow version 
     //  We do this now and not on top because min_nf_version is a param itself that requires validation:
@@ -244,16 +246,28 @@ def ValidateParams(){
     //        such as container engine, GitHub URL etc.
     def max_char = params.keySet().collect { it.length() }.max()  
     println "$ANSI_GREEN" + "$DASHEDDOUBLE"
-    println "[PARAMS SUMMARY]"
     println ""
+    println "[PARAMS SUMMARY]"
+
+    counter = 1
     schema.each { name, entry -> 
         
         def use_length = max_char - name.length()
         def spacer = ' '.multiply(use_length)
-        def m = entry['value']
-        if(m!='') println "${name} ${spacer}:: ${m}" 
+        def m = entry['type'] == "string" && entry['value'] instanceof Boolean ? '' : entry['value']
+        if(entry['title'].toString() != "null"){
+            def title=entry['title']
+            
+            println ""
+            println DASHEDSINGLE
+            println title
+            println DASHEDSINGLE
+
+        } else if(m!='') println "${name} ${spacer}:: ${m}" 
+        counter += 1
 
     }
+    println ""
     println "${DASHEDDOUBLE}"
     println "$ANSI_RESET"
 
@@ -263,7 +277,6 @@ def ValidateParams(){
     This script is evaluated in main.nf so we run the function here and then return the params map
     so it is available in the global main.nf environment
 */
+
 ValidateParams()
 return(params)
-
-

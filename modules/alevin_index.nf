@@ -4,7 +4,11 @@ process AlevinIndex {
 
     errorStrategy 'finish'
 
-    publishDir params.outdir, mode: params.publishmode
+    publishDir = [
+        path: params.outdir,
+        mode: params.publishmode,
+        saveAs: { filename -> filename.equals("versions.txt") || filename.equals("command_lines.txt") ? null : filename } 
+    ]
 
     container params.container
 
@@ -47,11 +51,15 @@ process AlevinIndex {
 process AlevinIndexFB {
 
     cpus 1
-    memory 100.MB
+    memory 500.MB
 
     errorStrategy 'finish'
 
-    publishDir params.outdir, mode: params.publishmode
+    publishDir = [
+        path: params.outdir,
+        mode: params.publishmode,
+        saveAs: { filename -> filename.equals("versions.txt") || filename.equals("command_lines.txt") ? null : filename } 
+    ]
 
     container params.container
 
@@ -66,11 +74,7 @@ process AlevinIndexFB {
     
     script: 
     """
-    salmon index --no-version-check \
-        -t ${featureset} \
-        -i ${idxname} \
-        --features \
-        -k7
+    salmon index --no-version-check -t ${featureset} -i ${idxname} --features -k7
 
     awk 'OFS=\"\t\" {print \$1, \$1}' $featureset > "$idxname/tgmap.txt"
 
