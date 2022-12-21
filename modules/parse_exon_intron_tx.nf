@@ -6,7 +6,11 @@ process ParseExonIntronTx {
 
     errorStrategy 'finish'
 
-    publishDir params.outdir, mode: params.publishmode
+    publishDir = [
+        path: params.outdir,
+        mode: params.publishmode,
+        saveAs: { filename -> filename.equals("versions.txt") || filename.equals("command_lines.txt") ? null : filename } 
+    ]
 
     container params.container
 
@@ -26,9 +30,7 @@ process ParseExonIntronTx {
 
     script:
     """
-    Rscript --vanilla \
-        $baseDir/bin/parse_introns.R \
-            $genome $gtf \"$params.gene_name\" \"$params.gene_id\" \"$params.gene_type\" \"$params.chrM\" \"$params.rrna\"
+    Rscript --vanilla $baseDir/bin/parse_introns.R $genome $gtf $params.gene_id $params.gene_name $params.gene_type $params.read_length $params.chrM $params.rrna
 
     echo ${task.process}: > command_lines.txt
     cat .command.sh | grep -vE '^#!/bin|versions.txt\$|command_lines.txt\$|cat \\.command.sh' | sed 's/  */ /g' | awk NF >> command_lines.txt

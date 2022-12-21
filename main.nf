@@ -32,177 +32,59 @@ println "=======================================================================
 // Load the modules and pass params
 //------------------------------------------------------------------------
 
-include { ValidateSamplesheet   }   from './modules/validate_samplesheet.nf'    addParams(  outdir: params.outdir)
-
-//------------------------------------------------------------------------
-
-include { ParseExonIntronTx     }   from './modules/parse_exon_intron_tx.nf'    addParams(  gene_name:      params.gene_name,
-                                                                                            gene_id:        params.gene_id,
-                                                                                            gene_type:      params.gene_type,
-                                                                                            chrM:           params.chrM,
-                                                                                            rrna:           params.rrna,
-                                                                                            outdir:         params.idx_outdir)
+include { ParseExonIntronTx } from './modules/parse_exon_intron_tx.nf' addParams(gene_id: params.gene_id,
+                                                                                 gene_name: params.gene_name,
+                                                                                 gene_type: params.gene_type,
+                                                                                 read_length: params.read_length,
+                                                                                 chrM: params.chrM,
+                                                                                 rrna: params.rrna,
+                                                                                 outdir: params.idx_outdir)
                                                                                             
 //------------------------------------------------------------------------                                                                                            
 
-include { AlevinIndex           }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir,
-                                                                                            additional:     params.idx_args)
+include { AlevinIndex } from './modules/alevin_index' addParams(outdir: params.idx_outdir, additional: params.idx_args)
+
+//------------------------------------------------------------------------               
+
+include {ValidateSamplesheet } from './modules/validate_samplesheet.nf'
+
+//------------------------------------------------------------------------          
+
+include { Quant } from './modules/alevin_quant' addParams(outdir: params.quant_outdir,     
+                                                          r1_type: params.r1_type,                                   
+                                                          r2_type: params.r2_type,
+                                                          args: params.quant_args)
+
+//------------------------------------------------------------------------          
+
+include { AlevinIndexFB } from './modules/alevin_index' addParams(outdir: params.idx_outdir)
 
 //------------------------------------------------------------------------
 
-include { AlevinIndexFB         }   from './modules/alevin_index'               addParams(  outdir:         params.idx_outdir)
+include { QuantFB } from './modules/alevin_quant' addParams(outdir: params.quant_outdir,     
+                                                            r1_type: params.r1_type,                                   
+                                                            r2_type: params.r2_type_fb,
+                                                            args: params.quant_args_fb)
 
 //------------------------------------------------------------------------
 
-// combine the read geometry and additional params into a single string
-use_quant_args = params.quant_args + ' ' + params.r1_type + ' ' + params.r2_type
-if(use_quant_args == ' ') use_quant_args = ''
-
-include { AlevinQuant           }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
-                                                                                            libtype:        params.libtype,
-                                                                                            additional:     use_quant_args)
+include { Mtx } from './modules/write_mtx' addParams(outdir: params.mtx_outdir)
 
 //------------------------------------------------------------------------
 
-// combine the read geometry and additional params into a single string
-use_quant_args_sf = params.quant_args + ' ' + params.r1_type + ' ' + params.r2_type_fb
-if(use_quant_args_sf == ' ') use_quant_args_sf = ''
+include { AlevinQC } from './modules/alevin_qc' addParams(outdir: params.qc_outdir)
 
-include { AlevinQuantFB         }   from './modules/alevin_quant'               addParams(  outdir:         params.quant_outdir,
-                                                                                            libtype:        params.libtype,  
-                                                                                            suffix:         params.fb_suffix,
-                                                                                            additional:     use_quant_args_sf)
+//------------------------------------------------------------------------
+
+include { WriteNcells } from './modules/summary_cells' addParams(outdir: params.qc_outdir)
+
+//------------------------------------------------------------------------
+
+include{ CommandLines } from './modules/commandline' addParams(outdir: params.pipe_dir)                                                              
 
 //------------------------------------------------------------------------                                                                                            
 
-include { WriteMtx              }   from './modules/write_mtx'                  addParams(  outdir:         params.mtx_outdir)
-
-//------------------------------------------------------------------------  
-
-include { WriteNcells           }   from './modules/summary_cells'              addParams(  outdir:         params.qc_outdir)
-
-//------------------------------------------------------------------------  
-
-include { AlevinQC              }   from './modules/alevin_qc'                  addParams(  outdir:         params.qc_outdir)
-
-//------------------------------------------------------------------------  
-
-include{ CommandLines           }   from './modules/commandline'                addParams(  outdir:         params.pipe_dir)                                                              
-                                                                                      
-//------------------------------------------------------------------------      
-// Validate that samplesheet exists and that the fastq files exist
-//------------------------------------------------------------------------
-
-if(!params.idx_only){
-
-    // Validate that fastq files in samplesheet exist as files on disk
-
-    fastq_no_exist  = [:]
-    
-    if(!(new File(params.samplesheet)).exists()){
-        println "\u001B[31m========================================================================================================================="
-        println "[VALIDATION ERROR]"
-        println "The samplesheet does not exist!"
-        println "=========================================================================================================================\u001B[0m"
-        System.exit(1)
-    }
-
-    def file_samplesheet = new FileReader(params.samplesheet)
-
-    file_samplesheet.eachLine(1) {line, number-> 
-
-        if(number>1){
-
-            s = line
-                    .replaceAll('\\$baseDir|\\$\\{baseDir\\}', new String("${baseDir}/"))
-                    .replaceAll('\\$launchDir|\\$\\{launchDir\\}', new String("${launchDir}/"))
-                    .replaceAll('\\$projectDir|\\$\\{projectDir\\}', new String("${projectDir}/")).split(',')
-                
-            if(!new File(s[1]).exists()) fastq_no_exist.put(s[0], s[1])
-            if(!new File(s[2]).exists()) fastq_no_exist.put(s[0], s[2])
-                    
-        }
-
-    }
-
-    if(fastq_no_exist.size() > 0){
-        println "\u001B[31m========================================================================================================================="
-        println "[VALIDATION ERROR]"
-        println "The following fastq files in the samplesheet do not exist:"
-        println fastq_no_exist
-        println "=========================================================================================================================\u001B[0m"
-        System.exit(1)
-    }
-
-    // Channel to samplesheet:
-    if(params.samplesheet != '') { 
-        ch_samplesheet_in = Channel.fromPath(params.samplesheet, checkIfExists: true) 
-    }
-
-}
-
-//------------------------------------------------------------------------      
-// Validate that (in case a premade index is provided) the individual
-// elements exist
-//------------------------------------------------------------------------
-
- def ConvertBool2String(indata='') {
-    if(indata instanceof Boolean){
-        return ''
-    } else {
-        return indata
-    }
- }
-
-if(params.idx != ''){
-
-        // little hack when the param is empty (which groovy then converts to boolean), convert to string
-        // so File() will not complain about Boolean rather than having String input
-        use_idx   = ConvertBool2String(params.idx)
-        use_tgmap = ConvertBool2String(params.tgmap)
-        use_rrna  = ConvertBool2String(params.rrnagenes)
-        use_mtrna = ConvertBool2String(params.mtrnagenes)
-        use_expanded_features = ConvertBool2String(params.expanded_features)
-        use_gene2type = ConvertBool2String(params.gene2type)
-
-        // validate existance:
-        def not_exist = [:]
-        if(!new File(use_idx).exists()) not_exist.put("use_idx", use_idx)
-        not_exist.each { mm, nn -> 
-        
-            def nmm = mm.replaceAll("use_", "--")
-            println "\u001B[31m========================================================================================================================="
-            println "[VALIDATION ERROR]"
-            println "${nmm} does not exist!"
-            println "=========================================================================================================================\u001B[0m"
-            
-        }
-
-        if(not_exist.size() > 0) System.exit(1)
-
-    }
-
-//------------------------------------------------------------------------      
-// Define subworkflows
-//------------------------------------------------------------------------
-
-// Samplesheet validation
-workflow VALIDATE {
-
-    take:
-        samplesheet
-        
-    main:        
-        ValidateSamplesheet(samplesheet, baseDir, launchDir, projectDir)
-
-    emit:
-        samplesheet = ValidateSamplesheet.out.ssheet
-        versions = ValidateSamplesheet.out.versions
-
-}
-
-// Indexing of expanded transcriptome + genome (=gentrome)
-workflow INDEX_GENTROME {
+workflow INDEXING {
 
     take:
         genome
@@ -212,300 +94,236 @@ workflow INDEX_GENTROME {
         ParseExonIntronTx (genome, gtf) 
         AlevinIndex(genome, ParseExonIntronTx.out.txtome, params.idx_name)     
 
-     emit:
-        tgmap = ParseExonIntronTx.out.tgmap
-        rrna  = ParseExonIntronTx.out.rrnagenes
-        mtrna = ParseExonIntronTx.out.mtgenes
+    emit:
         idx   = AlevinIndex.out.idx      
-        ftrs  = ParseExonIntronTx.out.features
-        g2t   = ParseExonIntronTx.out.gene2type
+        tgmap = ParseExonIntronTx.out.tgmap
+        rrnagenes  = ParseExonIntronTx.out.rrnagenes
+        mtgenes = ParseExonIntronTx.out.mtgenes
+        features  = ParseExonIntronTx.out.features
+        gene2type   = ParseExonIntronTx.out.gene2type
         versions = ParseExonIntronTx.out.versions.concat(AlevinIndex.out.versions)
 
 }
 
-// Indexing of feature barcodes
-workflow INDEX_FB {
-
-    take:
-        fb_file
-        idxname
-
-    main:
-        AlevinIndexFB(fb_file, idxname)
-
-    emit: 
-        idx    = AlevinIndexFB.out.idx
-        tgmap  = AlevinIndexFB.out.tgmap
-        versions = AlevinIndexFB.out.versions
-
-}
-
-// Quant against gentrome
-workflow QUANT {
+workflow VALIDATE {
 
     take: 
-        fastq
-        tgmap  
-        rrnagenes
-        mtgenes
-        idx
+        samplesheet_unvalidated
 
     main:
-        AlevinQuant(fastq, idx, tgmap, rrnagenes, mtgenes)
+        ValidateSamplesheet(samplesheet_unvalidated)
+
+    tuple_fastq = ValidateSamplesheet.out.samplesheet
+           .splitCsv(header:true)
+           .map {
+               
+                // Samplesheet allows Nextflow variables to be used, replace by absolute path
+                r1 = it['r1']
+                        .replaceAll('\\$baseDir|\\$\\{baseDir\\}', new String("${baseDir}/"))
+                        .replaceAll('\\$launchDir|\\$\\{launchDir\\}', new String("${launchDir}/"))
+                        .replaceAll('\\$projectDir|\\$\\{projectDir\\}', new String("${projectDir}/"))
+
+                rx = it['r2']
+                        .replaceAll('\\$baseDir|\\$\\{baseDir\\}', new String("${baseDir}/"))
+                        .replaceAll('\\$launchDir|\\$\\{launchDir\\}', new String("${launchDir}/"))
+                        .replaceAll('\\$projectDir|\\$\\{projectDir\\}', new String("${projectDir}/"))
+
+                r2 = rx.toString()=='' ? '.' : rx   
+
+                // Make sure fastq file paths exist
+                is_error = false
+
+                r1_file = file(r1).exists()           
+                if(!r1_file){
+                    ErrorMessenger("$r1 does not exist")
+                    is_error = true
+                }
+
+                if(r2!=".") { 
+                    r2_file = file(r2).exists()
+                    if(!r1_file){
+                        ErrorMessenger("$r2 does not exist") 
+                        is_error = true
+                    }
+                }
+
+                // Libtype and whether the fastq file is a gne expression or feature barcode readout
+                libtype = it['libtype']
+                is_fb = it['is_fb']
+
+                // meta map inspired by nf-core
+                meta = [id:it['sample'], libtype: libtype, is_fb: is_fb]     
+                reads = [r1: r1, r2: r2]      
+
+                if(!is_error){
+                    return tuple(meta, reads)
+                } else {
+                    return null
+                }
+                
+            }
+            .groupTuple(by:0)
 
     emit:
-        quants = AlevinQuant.out.quants     
-        versions = AlevinQuant.out.versions
+        tuple_fastq = tuple_fastq
+        versions = ValidateSamplesheet.out.versions
 
 }
 
-// Quant against feature barcodes
-workflow QUANT_FB {
+workflow {
 
-    take: 
-        fastq  
-        idx
-        tgmap
+    //--------------------------------------------------------------------
+    // Indexing of transcriptome
+    //--------------------------------------------------------------------
 
-    main:
-        AlevinQuantFB(fastq, idx, tgmap)
+    if(params.idx==''){
+        
+        INDEXING(params.genome, params.gtf)
+        indexing_versions = INDEXING.out.versions
 
-    emit:
-        quants = AlevinQuantFB.out.quants                
-        versions = AlevinQuantFB.out.versions
+        indexing_idx       = INDEXING.out.idx      
+        indexing_tgmap     = INDEXING.out.tgmap
+        indexing_rrnagenes = INDEXING.out.rrnagenes
+        indexing_mtgenes   = INDEXING.out.mtgenes
+        indexing_features  = INDEXING.out.features
+        indexing_gene2type = INDEXING.out.gene2type
 
-}
+    } else {
+        
+        indexing_versions  = Channel.empty()
+        indexing_idx       = params.idx      
+        indexing_tgmap     = params.tgmap
+        indexing_rrnagenes = params.rrnagenes
+        indexing_mtgenes   = params.mtgenes
+        indexing_features  = params.features
+        indexing_gene2type = params.gene2type
 
-// Split quants into spliced/unspliced and write as mtx
-workflow WRITE_MTX {
+    }
 
-    take:
-        quants
-        features
-        gene2type
-        samplesheet
+    if(!params.only_idx){
 
-    main:    
-        WriteMtx(quants, features, gene2type, samplesheet) 
+        //--------------------------------------------------------------------
+        // Samplesheet validation
+        //--------------------------------------------------------------------
 
-    emit:
-        mtx      = WriteMtx.out.mtx
-        barcodes = WriteMtx.out.barcodes      
-        features = WriteMtx.out.features
-        ncells   = WriteMtx.out.ncells
-        versions = WriteMtx.out.versions
-
-}
-
-workflow SUMMARY {
-    
-    take:
-        dirs
-
-    main:
-        WriteNcells(dirs)
-
-    emit:
-        versions = WriteNcells.out.versions        
-            
-}
-
-// Basic QC using alevinQC (Bioc)
-workflow ALEVIN_QC {
-
-    take:
-        quants
-
-    main:
-        AlevinQC(quants, 'empty')
-
-    emit:
-        versions = AlevinQC.out.versions            
-
-}
-
-workflow ALEVIN_QC_FB {
-
-    take:
-        quants
-
-    main:
-        AlevinQC(quants, params.fb_suffix)
-
-    emit:
-        versions = AlevinQC.out.versions        
-
-}
-
-//------------------------------------------------------------------------
-// Assemble main workflow from subworkflows
-//------------------------------------------------------------------------
-
-workflow SC_PREPROCESS { 
-    
-    take:
-        samplesheet
-        idx
-        tgmap
-        rrna
-        mtrna
-        gene2type
-        ftrs
-
-    main:
-
-        VALIDATE(samplesheet)
+        VALIDATE(params.samplesheet)
         validate_versions = VALIDATE.out.versions
+    
+        ch_geneExpression = VALIDATE.out.tuple_fastq.map{
 
-        // channel with the validated samplesheet
-        ch_samplesheet = VALIDATE.out.samplesheet.splitCsv(header: true)
-
-        // channel with the transcriptomic fastq pairs:
-        ch_input_quant = ch_samplesheet.map { k -> 
-            if(k['is_fb']=='false') {
-                tuple(k['sample_id'], k['R1'], k['R2'], k['is_fb'])
-            } else null
-        }.groupTuple(by: 0)
-
-        // channel with the feature barcode fastq pairs:
-        ch_input_quant_fb = ch_samplesheet.map { k -> 
-            if(k['is_fb']=="true") {
-                tuple(k['sample_id'], k['R1'], k['R2'], k['is_fb'])
-            } else null
-        }.groupTuple(by: 0)
-
-        // Index gentrome and then quantify against it:
-        QUANT(ch_input_quant, tgmap, rrna, mtrna, idx)
-        quant_versions = QUANT.out.versions
-
-        ALEVIN_QC(QUANT.out.quants)
-        alevinqc_versions = ALEVIN_QC.out.versions
-        
-        
-        // Index SFs and then quantify against it:
-        if(params.features_file!=''){
-
-            INDEX_FB(params.features_file, "idx_features")
-            indexfb_versions = INDEX_FB.out.versions
-
-            QUANT_FB(ch_input_quant_fb, INDEX_FB.out.idx, INDEX_FB.out.tgmap)
-            quantfb_versions = QUANT_FB.out.versions
-
-            ALEVIN_QC_FB(QUANT_FB.out.quants)
-            alevinqcfb_versions = ALEVIN_QC_FB.out.versions
+            aa = it[0]
+            r1 = it[1].r1.toList().flatten()
+            r2 = it[1].r2.toList().flatten()
+            if(aa.is_fb=='false') return [aa, r1, r2] else return null
             
+        }
+
+        ch_featureBarcode = VALIDATE.out.tuple_fastq.map{
+
+            aa = it[0]
+            r1 = it[1].r1.toList().flatten()
+            r2 = it[1].r2.toList().flatten()
+            if(aa.is_fb=='true') return [aa, r1, r2] else return null
+        }
+
+        //--------------------------------------------------------------------
+        // Quantification of gene expression reads
+        //--------------------------------------------------------------------
+
+        Quant(ch_geneExpression, indexing_idx.collect(), indexing_tgmap.collect(), indexing_rrnagenes.collect(), indexing_mtgenes.collect())
+        quant_versions = Quant.out.versions
+
+        //--------------------------------------------------------------------
+        // Indexing of feature barcodes
+        //--------------------------------------------------------------------
+
+        if(params.features_file != ''){
+
+            AlevinIndexFB(params.features_file, "idx_fb")
+            indexfb_versions = AlevinIndexFB.out.versions
+
         } else {
 
             indexfb_versions = Channel.empty()
-            quantfb_versions = Channel.empty()
-            alevinqcfb_versions = Channel.empty()
 
         }
 
-        /* 
-         * Split alevin quantifications into spliced/unspliced.
-         * optionally match these with the feature barcode libraries and retain only those CBs present in both RNA and FBs,
-         * optionally perform barcode translation,
-         * and save as mtx.gz and the barcodes/features as tsv.gz
-         * For this combine the RNA and FB alevin quants into a single tuple
-         */
+        //--------------------------------------------------------------------
+        // Quantification of feature barcode reads
+        //--------------------------------------------------------------------
 
-        // translation table, only used if translate_barcodes is true
-        if(params.translate_barcodes==true){
-                ch_translate = Channel.fromPath(params.translate_list, checkIfExists: true)
-        } else ch_translate = Channel.fromPath("/")
+        if(params.features_file != ''){
 
-        // combine RNA and FB alevins into a tuple:
-        if(params.features_file==''){
-            ch_quants = QUANT.out.quants.map { qm -> tuple(qm[0], qm[1], "/")}
+            QuantFB(ch_featureBarcode, AlevinIndexFB.out.idx.collect(), AlevinIndexFB.out.tgmap.collect())
+            quant_fb_channel = QuantFB.out.quants
+            quantfb_versions = QuantFB.out.versions
+
         } else {
-            ch_quants = QUANT.out.quants.join(QUANT_FB.out.quants, remainder: true).map { boom ->
-                if(boom[2]==null) {
-                    return tuple(boom[0], boom[1], "/")
-                } else return boom
-            }
+
+            quant_fb_channel = Channel.empty()
+            quantfb_versions = Channel.empty()
+
         }
 
-        WRITE_MTX(ch_quants, ftrs, gene2type, ch_translate.collect())
-        writemtx_versions = WRITE_MTX.out.versions
+        //--------------------------------------------------------------------
+        // Splitting of quants into spliced and unspliced counts.
+        // If feature barcodes were present for a given sample then 
+        // retain only barcodes of the FB that made it to the gene expression
+        // matrix. Perform barcode translation if set in the params.
+        //--------------------------------------------------------------------
 
-        SUMMARY(WRITE_MTX.out.ncells.collect())
-        summary_versions = SUMMARY.out.versions
+        ch_for_mtx = Quant.out.quants.concat(quant_fb_channel)
+                    .map{ [[id: "${it[0].id}"], it[1]] }.groupTuple(by: 0) // retain only .id and the quants channel as part of the tuple
 
-        x_commands = validate_versions.concat(quant_versions, alevinqc_versions, indexfb_versions, quantfb_versions,
-                                              alevinqcfb_versions, writemtx_versions, summary_versions)
-                     .map {it [1]}.flatten().collect()
+        Mtx(ch_for_mtx, indexing_features.collect(), indexing_gene2type.collect(), params.translate_list)
+        mtx_versions = Mtx.out.versions
+        
+        //--------------------------------------------------------------------
+        // AlevinQC reports and cell summary
+        //--------------------------------------------------------------------
+        
+        ch_for_aqc = Quant.out.quants.concat(quant_fb_channel).map{
 
-        x_versions = validate_versions.concat(quant_versions.first(), 
-                                              alevinqc_versions.first(), 
-                                              indexfb_versions, 
-                                              quantfb_versions.first(),
-                                              alevinqcfb_versions.first(), 
-                                              writemtx_versions.first(), 
-                                              summary_versions)              
-                     .map {it [0]}
-                     .flatten()
-                     .collect()
+            ii = it[0].is_fb=='true' ? [[id: "${it[0].id}_fb"], it[1]] : [[id: "${it[0].id}"], it[1]]
+            return ii
 
-        CommandLines(x_commands, x_versions)
+        }
 
-}
+        AlevinQC(ch_for_aqc)
+        alevinqc_versions = AlevinQC.out.versions
 
-//------------------------------------------------------------------------
-// Run the main workflow
-//------------------------------------------------------------------------
+        WriteNcells(Mtx.out.ncells.collect())
+        ncells_versions = WriteNcells.out.versions
 
-workflow { 
-    
-    // Run indexing of gentrome if no premade index is provided:
-    if(params.idx == ''){
-    
-        INDEX_GENTROME(params.genome, params.gtf)
-        use_idx       = INDEX_GENTROME.out.idx
-        use_tgmap     = INDEX_GENTROME.out.tgmap
-        use_rrna      = INDEX_GENTROME.out.rrna
-        use_mtrna     = INDEX_GENTROME.out.mtrna
-        use_expanded_features = INDEX_GENTROME.out.ftrs   // expanded features
-        use_gene2type = INDEX_GENTROME.out.g2t
+    } else {
 
-        indexgentrome_versions = INDEX_GENTROME.out.versions
-
-        x_commands = indexgentrome_versions
-                     .map {it [1]}.flatten().collect()
-
-        x_versions = indexgentrome_versions            
-                     .map {it [0]}
-                     .flatten()
-                     .collect()
-
-        CommandLines(x_commands, x_versions)                     
+        validate_versions = Channel.empty()
+        quant_versions    = Channel.empty()
+        alevinqc_versions = Channel.empty()
+        indexfb_versions  = Channel.empty()
+        quantfb_versions  = Channel.empty()
+        mtx_versions      = Channel.empty()
+        ncells_versions   = Channel.empty()
 
     }
-    
-    // Run the quantification, mtx and QC:
-    if(!params.idx_only){
 
-        SC_PREPROCESS(params.samplesheet, use_idx, use_tgmap, use_rrna, use_mtrna, use_gene2type, use_expanded_features) 
+    //--------------------------------------------------------------------
+    // Command lines and software versions
+    //--------------------------------------------------------------------
 
-    } 
+    x_commands = validate_versions.concat(indexing_versions, quant_versions, alevinqc_versions, indexfb_versions, quantfb_versions,
+                                          mtx_versions, ncells_versions)
+                 .map {it [1]}.flatten().collect()
 
-    // Final message printing the output directory:
-    def od = params.outdir
-    workflow.onComplete {
-        Date date2 = new Date()
-        String datePart2 = date2.format("yyyy-dd-MM -- ")
-        String timePart2 = date2.format("HH:mm:ss")
-        def end_date = datePart2 + timePart2
-        println ""
-        println "\u001B[33m========================================================================================================================="
-        println "Pipeline completed!"
-        println "End: $end_date"
-        println "Results are in:"
-        println od
-        //println "A summary file with cellnumbers per sample is at:"
-        //println "$smyfile"
-        println "=========================================================================================================================\u001B[0m"
-        println ""
-    }
+    x_versions = validate_versions.concat(indexing_versions.first(),
+                                          quant_versions.first(), 
+                                          alevinqc_versions.first(), 
+                                          indexfb_versions, 
+                                          quantfb_versions.first(),
+                                          mtx_versions.first(), 
+                                          ncells_versions)              
+                     .map {it [0]}.flatten().collect()
+
+    CommandLines(x_commands, x_versions)
 
 }

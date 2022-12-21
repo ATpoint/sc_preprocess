@@ -38,8 +38,6 @@ opts <- sapply(o_in, function(x) if(x %in% c("NULL", "null")) NULL else x, simpl
 #/ so set it to NULL
 if(length(opts$alevin_fb)==0) opts$alevin_fb <- NULL
 
-save.image("env.rdata")
-
 #---------------------------------------------------------------------------------------------------------
 # Read RNA experiment -- split into spliced and unspliced
 #---------------------------------------------------------------------------------------------------------
@@ -82,7 +80,7 @@ if(!is.null(opts$alevin_fb)){
     type="alevin", skipMeta=TRUE, dropInfReps=TRUE)
   
   #/ optional barcode translation with the 10x 3M translation table
-  if(opts$do_translate){
+  if(opts$do_translate & !is.null(opts$translate_table)){
     
     map <- read.table(opts$translate_table, sep="\t", header=FALSE) # read translation table
     fb2rna <- map$V1                                # the sequences are rna

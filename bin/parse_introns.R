@@ -5,21 +5,21 @@
 
 #/ parse arguments from command line:
 args=commandArgs(trailingOnly=TRUE)
-if (length(args) != 7) {
+if (length(args) != 8) {
     stop("[invalid params]", "\n",
-         "parse_introns.R <genome> <gtf> <gene_name> <gene_id> <gene_type> <chrM> <rrna>")
+         "parse_introns.R <genome> <gtf> <gene_id> <gene_name> <gene_type> <read_length> <chrM> <rrna>")
          
 }
 
 params <- list()
 params$genome <- args[1]
 params$gtf <- args[2]
-params$gene_name <- args[3]
-params$gene_id <- args[4]
+params$gene_id <- args[3]
+params$gene_name <- args[4]
 params$gene_type <- args[5]
-params$readlength <- 150 # just hardcode it to be consistent, and most sequencing is anyway 2x150
-params$chrM <- args[6]
-params$rrna <- args[7]
+params$readlength <- args[6]
+params$chrM <- args[7]
+params$rrna <- args[8]
 
 #/ load packages:
 suppressMessages({

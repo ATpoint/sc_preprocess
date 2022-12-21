@@ -8,11 +8,11 @@ f <-
   read.delim(x, header=FALSE)
 }) 
 
-#/ summary table:
+# summary table:
 d <- do.call(rbind, f)
 colnames(d) <- c("sample", "ncells_rna", "ncells_intersect")
 
-#/ plot
+# plot
 library(ggplot2)
 library(reshape2)
 r <- reshape2::melt(d, id.vars="sample")
@@ -40,6 +40,8 @@ gg <-
     facet_wrap(~sample, ncol=4, scales="free_x")
 
 if(length(cols)==1) gg <- gg + theme(legend.position="none")
+
+d <- if(sum(is.na(d$ncells_intersect))==nrow(d)) d[,1:2,drop=FALSE] else d
 
 write.table(d, "summary_detected_cells.txt", sep="\t", col.names=TRUE, 
             row.names=FALSE, quote=FALSE)

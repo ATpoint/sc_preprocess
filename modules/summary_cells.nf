@@ -6,10 +6,10 @@ process WriteNcells {
     errorStrategy 'finish'
 
     publishDir = [
-        path: params.outdir, 
+        path: params.outdir,
         mode: params.publishmode,
+        saveAs: { filename -> filename.equals("versions.txt") || filename.equals("command_lines.txt") ? null : filename } 
     ]
-
     container params.container
 
     input:
