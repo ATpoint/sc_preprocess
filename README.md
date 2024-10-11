@@ -38,7 +38,7 @@ The pipeline covers these steps:
 
 4. Create a per-sample summary report using [alevinQC](https://csoneson.github.io/alevinQC/articles/alevinqc.html) which includes relevant QC metrics such as the average number of reads per cell, number of detected genes per cell [and others](https://bioconductor.org/packages/3.15/bioc/vignettes/alevinQC/inst/doc/alevinqc.html#generate-individual-plots). Also, a table and plot summarizing number of cells per sample is generated using custom scripts.
 
-5. Optionally, quantify matched reads from a [feature barcoding](https://www.biolegend.com/en-us/blog/cite-seq-and-totalseq-reagents) experiment such as [CITE-seq](https://cite-seq.com/) or [HTO cell hashing](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-018-1603-1) against a provided set of reference barcode sequences. The obtained counts are filtered for the cellular barcodes detected in the RNA quantification. In feature barcode mode the pipeline will eventually return a count matrix that only contains those cellular barcodes detected in both the RNA and feature barcode experiment. Some feature barcode sets such as totalSeq-B/C require [barcode translation](https://kb.10xgenomics.com/hc/en-us/articles/360031133451-Why-is-there-a-discrepancy-in-the-3M-february-2018-txt-barcode-whitelist-). We provide the default translation table from the [CellRanger GitHub](https://github.com/10XGenomics/cellranger/raw/master/lib/python/cellranger/barcodes/translation/3M-february-2018.txt.gz) in the `assets/` folder to perform this translation if `--translate_barcodes` is set and `--translate_table` points to that table. See also this thread at [biostars.org](https://www.biostars.org/p/9506747/) for details.
+5. Optionally, quantify matched reads from a [feature barcoding](https://www.biolegend.com/en-us/blog/cite-seq-and-totalseq-reagents) experiment such as [CITE-seq](https://cite-seq.com/) or [HTO cell hashing](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-018-1603-1) against a provided set of reference barcode sequences. The obtained counts are filtered for the cellular barcodes detected in the RNA quantification. In feature barcode mode the pipeline will eventually return a count matrix that only contains those cellular barcodes detected in both the RNA and feature barcode experiment. Some feature barcode sets such as totalSeq-B/C require [barcode translation](https://kb.10xgenomics.com/hc/en-us/articles/360031133451-Why-is-there-a-discrepancy-in-the-3M-february-2018-txt-barcode-whitelist-). We provide the default translation table from the [CellRanger GitHub](https://github.com/10XGenomics/cellranger/raw/master/lib/python/cellranger/barcodes/translation/3M-february-2018.txt.gz) in the `assets/` folder to perform this translation if `--translate_barcodes` is set and `--translate_list` points to that table. See also this thread at [biostars.org](https://www.biostars.org/p/9506747/) for details.
 
 ## Usage
 
@@ -84,7 +84,7 @@ NXF_VER=22.10.4 nextflow run main.nf -profile singularity,slurm \
     --idx path_to_idx_folder \
     --tgmap path_to_tgmap --rrnagenes path_to_rrnagenes_file --mtgenes path_to_mtrnagenes_file \
     --features path_to_expanded_features_file --gene2type path_to_gene2type_file \
-    --features_file path/to/hto.tsv --translate_table path/to/assets/translate_table.txt.gz --translate_barcodes
+    --features_file path/to/hto.tsv --translate_list path/to/assets/translate_list.txt.gz --translate_barcodes
 ```    
 
 This will quantify the reads against the index, create spliced- and unspliced count tables and create the alevinQC report. As resources we hardcoded 6 CPUs and 30GB of RAM which works well for mouse samples of typical size. See details below.  
@@ -134,7 +134,7 @@ hto_3	CTTGCCGCATGTCAT
 
 If this file is provided then an index will be made for these files and the feature barcode fastq files will be quantified against it.
 The counts of the feature barcodes will be included to the bottom of the gene expression count tables. If barcode translation must be performed (totalSeq-B/C),
-then use `--translate_barcodes --translate_table path/to/translate_table.txt.gz`.
+then use `--translate_barcodes --translate_list path/to/translate_list.txt.gz`.
 
 **Quantification parameters**
 
